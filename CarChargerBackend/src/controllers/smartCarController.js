@@ -8,9 +8,6 @@ const authClient = new smartcar.AuthClient({
   mode: "simulated",
 });
 
-// Bộ nhớ tạm (giả sử, bạn có thể thay bằng DB)
-const userTokens = {};
-
 // 🔹 Bước 1: Tạo URL đăng nhập
 exports.getAuthUrl = (req, res) => {
   const authUrl = authClient.getAuthUrl([

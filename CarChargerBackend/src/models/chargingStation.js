@@ -11,4 +11,8 @@ const ChargingStationSchema = new mongoose.Schema({
   usedSlot: { type: Number, required: true, default: 0 }, // Số khe đã sử dụng
 });
 
-module.exports = mongoose.model("ChargingStation", ChargingStationSchema);
+module.exports = mongoose.model(
+  "chargingstations",
+  ChargingStationSchema,
+  "chargingstations"
+);
