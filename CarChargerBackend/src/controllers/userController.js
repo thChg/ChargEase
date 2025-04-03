@@ -1,5 +1,6 @@
 const User = require("../models/users");
 const clerk = require("@clerk/clerk-sdk-node");
+const ChargingStation = require("../models/chargingStation");
 
 module.exports.getUserInfo = async (req, res) => {
   try {
