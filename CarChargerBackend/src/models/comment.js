@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const CommentSchema = new mongoose.Schema({
   stationId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "ChargingStation",
+    ref: "chargingstations",
     required: true,
   }, // Liên kết với trạm sạc
   comment: { type: String, required: true },
