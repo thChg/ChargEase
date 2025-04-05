@@ -1,6 +1,7 @@
 const ChargingStation = require("../models/chargingStation");
 const haversine = require("../utils/distance");
 const smartcar = require("smartcar");
+const Comment = require("../models/comment");
 
 // Hàm lấy vị trí hiện tại (dùng request hoặc fallback về xe)
 const getCurrentLocation = async (req, vehicle) => {
@@ -20,7 +21,8 @@ const getCurrentLocation = async (req, vehicle) => {
   }
 };
 
-const getChargingStations = async (req, res) => {
+// tìm các trạm xạc theo sắp xếp khoảng cách tăng dần
+module.exports.getChargingStations = async (req, res) => {
   try {
     let accessToken = req.query.token || req.headers.authorization;
 
@@ -31,7 +33,7 @@ const getChargingStations = async (req, res) => {
     if (!accessToken) {
       return res.status(401).json({ message: "Missing access token" });
     }
-    console.log("getting charging stations")
+
     // Lấy danh sách xe
     const vehicles = await smartcar.getVehicles(accessToken);
     if (!vehicles.vehicles?.length) {
@@ -63,36 +65,37 @@ const getChargingStations = async (req, res) => {
     const user = req.user;
 
     // Lọc các trạm sạc trong phạm vi di chuyển
-    const reachableStations = stations
-      .map((station) => ({
-        id: station._id,
-        name: station.name,
-        longitude: station.longitude,
-        latitude: station.latitude,
-        address: station.address,
-        status: station.status,
-        distance: haversine(
+    const stationsWithDistance = stations
+      .map((station) => {
+        const distance = haversine(
           latitude,
           longitude,
           station.latitude,
           station.longitude
-        ),
-        isFavourite: user ? user.favourites.includes(station._id) : false,
-      }))
-      .filter((station) => station.distance <= maxRange);
-    console.log("sending charging stations")
+        );
+
+        // Tính remainingSlots
+        const remainingSlots = Math.max(0, station.slot - station.usedSlot);
+
+        // Cập nhật status dựa trên remainingSlots
+        const status = remainingSlots > 0 ? "available" : "unavailable";
+
+        return {
+          id: station._id,
+          name: station.name,
+          longitude: station.longitude,
+          latitude: station.latitude,
+          address: station.address,
+          status: status, // Thay status bằng 'available' hoặc 'unavailable'
+          distance: distance.toFixed(2),
+          isFavourite: user ? user.favourites.includes(station._id) : false,
+          reachable: distance <= maxRange,
+        };
+      })
+      .sort((a, b) => a.distance - b.distance);
+
     res.json({
-      location, // Vị trí hiện tại sử dụng
-      vehicle: {
-        vin: attributes.vin,
-        make: attributes.make,
-        model: attributes.model,
-        year: attributes.year,
-        battery: battery ? battery.percentRemaining * 100 : null,
-        range: maxRange,
-        fuel: fuel ? fuel.percentRemaining * 100 : null,
-      },
-      reachableStations,
+      stations: stationsWithDistance,
     });
   } catch (err) {
     console.error(err);
@@ -100,4 +103,73 @@ const getChargingStations = async (req, res) => {
   }
 };
 
-module.exports = { getChargingStations };
+// thông tin cơ bản của trạm xạc
+module.exports.summaryinfo = async (req, res) => {
+  try {
+    const station = await ChargingStation.findById(req.params.id);
+    if (!station) {
+      return res.status(404).json({ message: "Trạm sạc không tồn tại" });
+    }
+
+    // Tính toán sao trung bình và số lượng đánh giá
+    const comments = await Comment.find({ stationId: station._id });
+    const totalStars = comments.reduce((sum, comment) => sum + comment.star, 0);
+    const averageRating =
+      comments.length > 0 ? (totalStars / comments.length).toFixed(1) : 0;
+
+    res.json({
+      name: station.name,
+      address: station.address,
+      introduce: station.introduce,
+      amenities: station.amenities,
+      rating: {
+        average: parseFloat(averageRating),
+        totalReviews: comments.length,
+      },
+      operatingHours: station.operatingHours,
+      fee: station.fee,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports.fullinfo = async (req, res) => {
+  try {
+    const station = await ChargingStation.findById(req.params.id);
+    if (!station) {
+      return res.status(404).json({ message: "Trạm sạc không tồn tại" });
+    }
+
+    const comments = await Comment.find({ stationId: station._id })
+      .sort({ createdAt: -1 }) // Sắp xếp comment mới nhất trước
+      .lean();
+
+    // Tính toán rating
+    const totalStars = comments.reduce((sum, comment) => sum + comment.star, 0);
+    const averageRating =
+      comments.length > 0 ? (totalStars / comments.length).toFixed(1) : 0;
+
+    // Tạo response object
+    const response = {
+      ...station.toObject(),
+      rating: {
+        average: parseFloat(averageRating),
+        totalReviews: comments.length,
+        breakdown: [1, 2, 3, 4, 5].map((star) => ({
+          star,
+          count: comments.filter((c) => c.star === star).length,
+        })),
+      },
+      comments: comments.map((comment) => ({
+        ...comment,
+        createdAt: new Date(comment.createdAt).toLocaleString(),
+      })),
+      availableSlots: station.slot - station.usedSlot, // Thêm thông tin slot còn trống
+    };
+
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

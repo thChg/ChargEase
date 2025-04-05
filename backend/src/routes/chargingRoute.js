@@ -1,8 +1,14 @@
 const express = require("express");
-const { getChargingStations } = require("../controllers/chargingController");
-const authMiddleware = require("../middlewares/clerk");
+const controllers = require("../controllers/chargingController");
+const checkSmartcarToken = require("../middlewares/checkSmartcarToken");
 const router = express.Router();
 
-router.get("/findCharging", getChargingStations);
+router.get(
+  "/findCharging",
+  checkSmartcarToken,
+  controllers.getChargingStations
+);
+router.get("/summaryinfo/:id", checkSmartcarToken, controllers.summaryinfo);
+router.get("/fullinfo/:id", checkSmartcarToken, controllers.fullinfo);
 
 module.exports = router;

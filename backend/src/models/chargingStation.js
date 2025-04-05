@@ -5,8 +5,19 @@ const ChargingStationSchema = new mongoose.Schema({
   longitude: { type: Number, required: true },
   latitude: { type: Number, required: true },
   address: { type: String, required: true },
-  distance: { type: String, required: true },
-  status: { type: String, enum: ["available", "unavailable"], required: true },
+  slot: { type: Number, required: true }, // Tổng số khe sạc
+  usedSlot: { type: Number, required: true, default: 0 }, // Số khe đã sử dụng
+  introduce: { type: String, required: true },
+  fee: { type: Number, required: true },
+  workingHours: { type: String, required: true },
+  amenities: {
+    type: [String], // Mảng các tiện ích
+    default: [], // Mặc định là mảng rỗng
+  },
 });
 
-module.exports = mongoose.model("ChargingStation", ChargingStationSchema);
+module.exports = mongoose.model(
+  "chargingstations",
+  ChargingStationSchema,
+  "chargingstations"
+);
