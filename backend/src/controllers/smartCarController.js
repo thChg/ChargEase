@@ -8,9 +8,6 @@ const authClient = new smartcar.AuthClient({
   mode: "simulated",
 });
 
-// Bộ nhớ tạm (giả sử, bạn có thể thay bằng DB)
-const userTokens = {};
-
 // 🔹 Bước 1: Tạo URL đăng nhập
 exports.getAuthUrl = (req, res) => {
   const authUrl = authClient.getAuthUrl([
@@ -33,9 +30,7 @@ exports.handleAuthCallback = async (req, res, next) => {
 
     // Sử dụng authClient thay vì client
     const tokens = await authClient.exchangeCode(req.query.code);
-    console.log(tokens)
     const vehicles = await smartcar.getVehicles(tokens.accessToken);
-    console.log(vehicles)
     // instantiate first vehicle in vehicle list
     const vehicle = new smartcar.Vehicle(
       vehicles.vehicles[0],
