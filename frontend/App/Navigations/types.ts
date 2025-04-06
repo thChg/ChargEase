@@ -9,6 +9,8 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
 }
 
 export type BottomTabParamList = {
@@ -16,6 +18,7 @@ export type BottomTabParamList = {
   search: undefined;
   favourite: undefined;
   profile: undefined;
+  detail: undefined;
 };
 
 export type HomeScreenProps = NativeStackScreenProps<

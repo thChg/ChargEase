@@ -11,6 +11,8 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
   latitude: number;
   longitude: number;
 }
