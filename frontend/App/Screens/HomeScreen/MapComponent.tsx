@@ -32,16 +32,31 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
 }
 
 const OPENROUTESERVICE_API_KEY =
   "5b3ce3597851110001cf6248ac34d8a92f584c05939953f73989bb8a";
 
 const MapComponent: React.FC = () => {
-  const { chargingStations, loading } = useSelector(
-    (state: RootState) => state.ChargingStations
-  );
-  console.log(chargingStations)
+  // const { chargingStations, loading } = useSelector(
+  //   (state: RootState) => state.ChargingStations
+  // );
+  const loading = false;
+  const chargingStations = [
+    {
+      id: "2",
+      latitude: 21.0362,
+      longitude: 105.836,
+      name: "Tay Ho Charging Station",
+      distance: 0,
+      address: "address",
+      status: "Available",
+      isFavourite: true,
+      reachable: true,
+    },
+  ];
   const [userLocation, setUserLocation] = useState<Region | null>(null);
   const [selectedStation, setSelectedStation] =
     useState<ChargingStation | null>(null);
@@ -56,12 +71,10 @@ const MapComponent: React.FC = () => {
   const favouriteSelectedStation = route.params?.selectedStation;
 
   useEffect(() => {
-    console.log("using effect");
-    if (favouriteSelectedStation) {
-      console.log(favouriteSelectedStation);
+    if (favouriteSelectedStation && userLocation) {
       fetchDirections(favouriteSelectedStation);
     }
-  }, [favouriteSelectedStation]);
+  }, [favouriteSelectedStation, userLocation]);
 
   useEffect(() => {
     let isMounted = true; // Prevents state updates on unmounted components
@@ -111,25 +124,41 @@ const MapComponent: React.FC = () => {
     };
   }, []);
 
-  setInterval(async () => {
-    const location = await Location.getCurrentPositionAsync();
+  useEffect(() => {
+    let locationSubscription: Location.LocationSubscription;
 
-    setUserLocation((prevLocation) => {
-      if (
-        !prevLocation ||
-        prevLocation.latitude !== location.coords.latitude ||
-        prevLocation.longitude !== location.coords.longitude
-      ) {
-        return {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
+    const startWatchingLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setPermissionDenied(true);
+        return;
       }
-      return prevLocation;
-    });
-  }, 15000);
+
+      locationSubscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000, // fetch every 5 seconds
+          distanceInterval: 10, // or when user moves 10 meters
+        },
+        (location) => {
+          setUserLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          });
+        }
+      );
+    };
+
+    startWatchingLocation();
+
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
+  }, []);
 
   const focusOnUserLocation = () => {
     if (userLocation && mapRef.current) {
@@ -138,10 +167,7 @@ const MapComponent: React.FC = () => {
   };
 
   const fetchDirections = async (destination: ChargingStation) => {
-    if (!userLocation) return;
-
     const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${OPENROUTESERVICE_API_KEY}&start=${userLocation.longitude},${userLocation.latitude}&end=${destination.longitude},${destination.latitude}`;
-
     try {
       const response = await axios.get(url);
       const coords = response.data.features[0].geometry.coordinates.map(
@@ -204,18 +230,19 @@ const MapComponent: React.FC = () => {
             showsUserLocation
             initialRegion={userLocation}
           >
-            {chargingStations.map((station) => (
-              <Marker
-                key={station.id}
-                coordinate={{
-                  latitude: station.latitude,
-                  longitude: station.longitude,
-                }}
-                title={station.name}
-                image={require("../../../assets/images/station-marker.png")}
-                onPress={() => handleStationSelect(station)}
-              />
-            ))}
+            {chargingStations.length > 0 &&
+              chargingStations.map((station) => (
+                <Marker
+                  key={station.id}
+                  coordinate={{
+                    latitude: station.latitude,
+                    longitude: station.longitude,
+                  }}
+                  title={station.name}
+                  image={require("../../../assets/images/station-marker.png")}
+                  onPress={() => handleStationSelect(station)}
+                />
+              ))}
             {routeCoords.length > 0 && (
               <Polyline
                 coordinates={routeCoords}

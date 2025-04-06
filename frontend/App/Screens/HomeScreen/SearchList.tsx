@@ -18,6 +18,8 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
   latitude: number;
   longitude: number;
 }
@@ -33,18 +35,12 @@ const SearchList: React.FC<SearchListProps> = ({
   setIsSearching,
   isSearching,
 }) => {
-  const chargingStations = useSelector(
+  const { chargingStations } = useSelector(
     (state: RootState) => state.ChargingStations
   );
   const [searchingResult, setSearchingResult] =
     useState<ChargingStation[]>(chargingStations);
   const [searchQuery, setSearchQuery] = useState<string>("");
-
-  // const handleSearch = (query: string) => {
-  //   setSearchQuery(query);
-  //   onSearch(query);
-  // };
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.trim() === "") {
@@ -52,7 +48,7 @@ const SearchList: React.FC<SearchListProps> = ({
     } else {
       const results = chargingStations
         .filter((station) =>
-          station.title.toLowerCase().includes(query.toLowerCase())
+          station.name.toLowerCase().includes(query.toLowerCase())
         )
         .sort((a, b) => a.distance - b.distance);
 
@@ -78,13 +74,13 @@ const SearchList: React.FC<SearchListProps> = ({
       {isSearching && (
         <FlatList
           data={searchingResult}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id}
           style={styles.resultsContainer}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <TouchableWithoutFeedback onPress={() => onSelectStation(item)}>
               <View style={styles.resultItem}>
-                <Text style={styles.resultText}>{item.title}</Text>
+                <Text style={styles.resultText}>{item.name}</Text>
                 <Text style={styles.resultDistance}>
                   Distance: {item.distance.toFixed(2)} km
                 </Text>

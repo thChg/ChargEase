@@ -10,9 +10,11 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
 }
 
-const initialState: ChargingStation[] = chargingStations;
+const initialState: ChargingStation[] = [];
 
 const FavouriteSlice = createSlice({
   name: "FavouriteStations",
