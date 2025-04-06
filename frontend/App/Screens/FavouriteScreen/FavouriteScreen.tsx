@@ -18,6 +18,9 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import { BottomTabParamList } from "../../Navigations/types";
 import { SheetManager } from "react-native-actions-sheet";
+import chargingStations from "../../Utils/dummyData";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../../Navigations/AppNavigation";
 
 interface ChargingStation {
   distance: number;
@@ -28,6 +31,8 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
 }
 type NavigationProps = NativeStackNavigationProp<
   BottomTabParamList,
@@ -35,16 +40,20 @@ type NavigationProps = NativeStackNavigationProp<
 >;
 
 export default function FavouriteScreen() {
-  const favouriteStations = useSelector(
-    (state: RootState) => state.FavouriteStations
-  );
+  // const favouriteStations = useSelector(
+  //   (state: RootState) => state.ChargingStations.chargingStations
+  // );
+  const [favouriteStations, setFavouriteStations] =
+    useState<ChargingStation[]>(chargingStations);
   const [searchingResult, setSearchingResult] =
     useState<ChargingStation[]>(favouriteStations);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedStation, setSelectedStation] =
     useState<ChargingStation | null>(null);
 
-  const navigation = useNavigation<NavigationProps>();
+  const routingNavigation = useNavigation<NavigationProps>();
+  const detailNavigation =
+    useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -53,7 +62,7 @@ export default function FavouriteScreen() {
     } else {
       const results = favouriteStations
         .filter((station) =>
-          station.title.toLowerCase().includes(query.toLowerCase())
+          station.name.toLowerCase().includes(query.toLowerCase())
         )
         .sort((a, b) => a.distance - b.distance);
 
@@ -61,15 +70,19 @@ export default function FavouriteScreen() {
     }
   };
   const fetchDirection = (station: ChargingStation) => {
-    navigation.navigate("home", { selectedStation: undefined }); // Reset first
+    routingNavigation.navigate("home", { selectedStation: undefined }); // Reset first
     setTimeout(() => {
-      navigation.navigate("home", { selectedStation: station });
+      routingNavigation.navigate("home", { selectedStation: station });
     }, 100); // Short delay to trigger re-render
   };
 
   const onSelectStation = (station: ChargingStation) => {
     setSelectedStation(station);
-    SheetManager.show("stationDetails");
+    detailNavigation.navigate("Details", { selectedStation: station });
+  };
+
+  const handleUnfavourite = (station: ChargingStation) => {
+    setSearchingResult(searchingResult.filter((item) => item != station));
   };
 
   useFocusEffect(
@@ -96,7 +109,11 @@ export default function FavouriteScreen() {
         data={searchingResult}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <FavouriteStation station={item} onSelectStation={onSelectStation} />
+          <FavouriteStation
+            station={item}
+            onSelectStation={onSelectStation}
+            handleUnfavourite={handleUnfavourite}
+          />
         )}
       ></FlatList>
       <InformationSheet
@@ -112,8 +129,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchContainer: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    padding: 10,
   },
   searchBar: {
     backgroundColor: "white",

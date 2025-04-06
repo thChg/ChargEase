@@ -16,6 +16,8 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
 }
 
 interface InformationSheetProps {
@@ -39,7 +41,7 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
       {selectedStation && (
         <View style={styles.actionSheet}>
           <View style={styles.header}>
-            <Text style={styles.stationTitle}>{selectedStation.title}</Text>
+            <Text style={styles.stationTitle}>{selectedStation.name}</Text>
             <TouchableOpacity style={styles.favouriteButton}>
               <Ionicons name="heart" size={20} color={Colors.WHITE} />
             </TouchableOpacity>

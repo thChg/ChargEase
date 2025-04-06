@@ -2,6 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import chargingStations from "../../Utils/dummyData";
 import { Ionicons } from "@expo/vector-icons";
 import SearchList from "../HomeScreen/SearchList";
+import Colors from "../../Utils/Colors";
 
 interface ChargingStation {
   distance: number;
@@ -12,16 +13,20 @@ interface ChargingStation {
   address: string;
   status: string;
   isFavourite: boolean;
+  reachable: boolean;
+  availableSlots: number;
 }
 
 interface FavouriteStationProps {
   station: ChargingStation;
   onSelectStation: (station: ChargingStation) => void;
+  handleUnfavourite: (station: ChargingStation) => void;
 }
 
 const FavouriteStation: React.FC<FavouriteStationProps> = ({
   station,
   onSelectStation,
+  handleUnfavourite,
 }) => {
   return (
     <TouchableOpacity
@@ -29,12 +34,17 @@ const FavouriteStation: React.FC<FavouriteStationProps> = ({
       onPress={() => onSelectStation(station)}
     >
       <View style={styles.infoContainer}>
-        <Text style={styles.stationTitle}>{station.title}</Text>
+        <Text style={styles.stationTitle}>{station.name}</Text>
+        <Text style={styles.stationLocation}>
+          11 Nguyen Ngoc Vu, Ba Dinh, Hanoi
+        </Text>
         <Text style={styles.stationDistance}>
           Distance: {station.distance} km
         </Text>
       </View>
-      <Ionicons name="navigate" size={24} color="green" />
+      <TouchableOpacity onPress={() => handleUnfavourite(station)}>
+        <Ionicons name="heart-circle-sharp" size={35} color={Colors.PRIMARY} />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 };
@@ -68,6 +78,11 @@ const styles = StyleSheet.create({
   stationDistance: {
     fontSize: 14,
     color: "#666",
+  },
+  stationLocation: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 10,
   },
 });
 
