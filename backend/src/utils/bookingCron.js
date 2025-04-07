@@ -1,45 +1,63 @@
-const cron = require("node-cron");
-const Booking = require("../models/booking");
-const ChargingStation = require("../models/ChargingStation");
+// const cron = require("node-cron");
+// const mongoose = require("mongoose");
 
-// Hàm tự động cập nhật trạng thái booking
-const updateCompletedBookings = async () => {
-  try {
-    const now = new Date();
+// // Sử dụng singleton pattern để tránh lỗi OverwriteModelError
+// const Booking = mongoose.models.Booking || require("../models/booking");
+// const ChargingStation =
+//   mongoose.models.ChargingStation || require("../models/chargingStation");
 
-    // 1. Tìm các booking đã hết hạn nhưng chưa hoàn thành
-    const expiredBookings = await Booking.find({
-      status: "confirmed",
-      endTime: { $lte: now }, // endTime đã qua
-    });
+// const updateCompletedBookings = async () => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
 
-    if (expiredBookings.length === 0) {
-      console.log("Không có booking nào cần cập nhật.");
-      return;
-    }
+//   try {
+//     const now = new Date();
+//     console.log(`[${now.toISOString()}] Bắt đầu kiểm tra booking hết hạn...`);
 
-    // 2. Cập nhật trạng thái và giải phóng slot trạm
-    for (const booking of expiredBookings) {
-      // Cập nhật trạng thái
-      booking.status = "completed";
-      await booking.save();
+//     // 1. Tìm và cập nhật booking trong một transaction
+//     const expiredBookings = await Booking.find({
+//       status: "confirmed",
+//       endTime: { $lte: now },
+//     }).session(session);
 
-      // Giảm usedSlot của trạm
-      const station = await ChargingStation.findById(booking.stationId);
-      if (station) {
-        station.usedSlot = Math.max(0, station.usedSlot - 1);
-        await station.save();
-      }
+//     if (expiredBookings.length === 0) {
+//       console.log("Không có booking nào cần cập nhật.");
+//       await session.commitTransaction();
+//       return;
+//     }
 
-      console.log(`Đã cập nhật booking ${booking._id} sang "completed".`);
-    }
-  } catch (error) {
-    console.error("Lỗi cron job:", error);
-  }
-};
+//     // 2. Cập nhật hàng loạt hiệu quả hơn
+//     const bookingIds = expiredBookings.map((b) => b._id);
+//     const stationIds = [...new Set(expiredBookings.map((b) => b.stationId))]; // Lấy unique stationIds
 
-// Lên lịch chạy mỗi phút
-cron.schedule("* * * * *", updateCompletedBookings);
+//     // Cập nhật tất cả booking cùng lúc
+//     await Booking.updateMany(
+//       { _id: { $in: bookingIds } },
+//       { $set: { status: "completed" } }
+//     ).session(session);
 
-// Xuất hàm để có thể gọi thủ công nếu cần
-module.exports = updateCompletedBookings;
+//     // Cập nhật tất cả trạm cùng lúc
+//     await ChargingStation.updateMany(
+//       { _id: { $in: stationIds } },
+//       { $inc: { usedSlot: -1 } }
+//     ).session(session);
+
+//     await session.commitTransaction();
+//     console.log(
+//       `Đã cập nhật ${expiredBookings.length} booking sang "completed".`
+//     );
+//   } catch (error) {
+//     await session.abortTransaction();
+//     console.error("Lỗi cron job:", error);
+//   } finally {
+//     session.endSession();
+//   }
+// };
+
+// // Lên lịch chạy mỗi phút
+// cron.schedule("* * * * *", () => {
+//   updateCompletedBookings().catch(console.error);
+// });
+
+// // Xuất hàm để có thể gọi thủ công
+// module.exports = updateCompletedBookings;
