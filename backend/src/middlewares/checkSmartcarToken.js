@@ -1,41 +1,41 @@
 const axios = require("axios");
 
-// Middleware kiểm tra Access Token của Smartcar
 const checkSmartcarToken = async (req, res, next) => {
   try {
-    // Lấy token từ header Authorization
-    const token = req.headers["authorization"]?.split(" ")[1]; // lấy token sau "Bearer"
+    const token = req.headers["authorization"]?.split(" ")[1];
 
-    // Kiểm tra nếu không có token
     if (!token) {
       return res
         .status(401)
         .json({ message: "Access token không có, vui lòng đăng nhập." });
     }
 
-    // Kiểm tra token bằng API của Smartcar (ví dụ với endpoint xác thực token)
-    const response = await axios.post(
-      "https://api.smartcar.com/v2.0/me",
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    // Sử dụng endpoint hợp lệ để kiểm tra token
+    const response = await axios.get("https://auth.smartcar.com/v1/check", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    // Kiểm tra phản hồi từ Smartcar (nếu cần)
-    if (response.status !== 200) {
-      return res.status(401).json({ message: "Access token không hợp lệ." });
+    // Kiểm tra phản hồi thành công (Smartcar có thể trả về 200 hoặc 204)
+    if (response.status >= 200 && response.status < 300) {
+      // Lưu thông tin token vào request để sử dụng sau này nếu cần
+      req.smartcarToken = token;
+      return next();
     }
 
-    // Nếu token hợp lệ, cho phép yêu cầu tiếp tục
-    next();
+    return res.status(401).json({ message: "Access token không hợp lệ." });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(401)
-      .json({ message: "Token không hợp lệ hoặc yêu cầu không thể xác thực." });
+    console.error("Lỗi xác thực Smartcar:", error);
+
+    if (error.response) {
+      // Nếu Smartcar trả về lỗi cụ thể
+      return res.status(error.response.status).json({
+        message: error.response.data.message || "Xác thực Smartcar thất bại",
+      });
+    }
+
+    return res.status(500).json({ message: "Lỗi server khi xác thực token" });
   }
 };
 

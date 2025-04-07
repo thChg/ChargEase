@@ -11,6 +11,12 @@ router.post(
   controllers.addFavoriteCharger
 );
 
+router.delete(
+  "/delFarvorCharger/:id",
+  authMiddleware,
+  controllers.removeFavoriteCharger
+);
+
 router.post("/update-usedSlot/:id", authMiddleware, controllers.updateUsedSlot);
 
 module.exports = router;

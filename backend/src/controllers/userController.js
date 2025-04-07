@@ -2,6 +2,7 @@ const User = require("../models/users");
 const clerk = require("@clerk/clerk-sdk-node");
 const ChargingStation = require("../models/chargingStation");
 
+// lấy thông tin người dùng
 module.exports.getUserInfo = async (req, res) => {
   try {
     const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
@@ -26,6 +27,7 @@ module.exports.getUserInfo = async (req, res) => {
   }
 };
 
+// thêm trạm xạc ưa thích
 module.exports.addFavoriteCharger = async (req, res) => {
   try {
     const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
@@ -66,6 +68,52 @@ module.exports.addFavoriteCharger = async (req, res) => {
   }
 };
 
+// xóa trạm xạc ưa thích
+module.exports.removeFavoriteCharger = async (req, res) => {
+  try {
+    const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
+    const chargerId = req.params.id;
+
+    if (!clerkUserId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Lấy thông tin user từ Clerk
+    const clerkUser = await clerk.users.getUser(clerkUserId);
+    const username = clerkUser.username; // Lấy username
+
+    if (!username) {
+      return res.status(404).json({ message: "Username not found in Clerk" });
+    }
+
+    // Tìm user trong MongoDB bằng username
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found in database" });
+    }
+
+    // Xóa charger khỏi favorites
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { $pull: { favourites: chargerId } },
+      { new: true }
+    ).populate("favourites");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User update failed" });
+    }
+
+    res.status(200).json({
+      message: "Charger removed from favorites successfully",
+      favourites: updatedUser.favourites,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+//thao tác cập nhật số lượng slot sử dụng
 module.exports.updateUsedSlot = async (req, res) => {
   try {
     const { change } = req.body; // `change = +1` hoặc `change = -1`
