@@ -4,6 +4,7 @@ const routeAll = require("./routes/routeAll");
 const methodOverride = require("method-override");
 
 require("dotenv").config();
+require("./utils/bookingCron");
 // chạy db online
 connectDB();
 
