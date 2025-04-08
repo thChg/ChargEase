@@ -90,6 +90,7 @@ module.exports.getChargingStations = async (req, res) => {
           distance: distance.toFixed(2),
           isFavourite: user ? user.favourites.includes(station._id) : false,
           reachable: distance <= maxRange,
+          fee: station.fee,
         };
       })
       .sort((a, b) => a.distance - b.distance);
