@@ -124,7 +124,7 @@ module.exports.summaryinfo = async (req, res) => {
       introduce: station.introduce,
       amenities: station.amenities,
       rating: {
-        average: parseFloat(averageRating),
+        averageStar: parseFloat(averageRating),
         totalReviews: comments.length,
       },
       operatingHours: station.operatingHours,
@@ -135,6 +135,7 @@ module.exports.summaryinfo = async (req, res) => {
   }
 };
 
+// thông tin đầy đủ của trạm xạc
 module.exports.fullinfo = async (req, res) => {
   try {
     const station = await ChargingStation.findById(req.params.id);

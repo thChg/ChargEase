@@ -1,26 +1,65 @@
 const Comment = require("../models/comment");
 const ChargingStation = require("../models/chargingStation");
+const clerkClient = require("../utils/clerk");
+const User = require("../models/users");
 
 // API thêm bình luận
 module.exports.comment = async (req, res) => {
   try {
     const { comment, star } = req.body;
     const { stationId } = req.params;
+    const clerkUserId = req.auth.userId;
 
-    // Kiểm tra station có tồn tại không
-    const station = await ChargingStation.findById(stationId);
-    if (!station) {
-      return res.status(404).json({ message: "Charging station not found" });
+    if (!clerkUserId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Tạo comment mới
-    const newComment = new Comment({ stationId, comment, star });
+    // 1. Tìm user trong database bằng clerkUserId
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const username = clerkUser.username;
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 1. Kiểm tra station có tồn tại không
+    const station = await ChargingStation.findById(stationId);
+    if (!station) {
+      return res.status(404).json({ message: "Trạm sạc không tồn tại" });
+    }
+    console.log("tessssssssssssss");
+
+    // 2. Kiểm tra comment không được trống (NEW LOGIC)
+    if (!comment || comment.trim() === "") {
+      return res.status(400).json({
+        message: "Nội dung bình luận không được để trống",
+      });
+    }
+
+    // 3. Kiểm tra số sao hợp lệ (nếu cần)
+    if (star < 1 || star > 5) {
+      return res.status(400).json({
+        message: "Đánh giá sao phải từ 1 đến 5",
+      });
+    }
+
+    // 4. Tạo comment mới
+    const newComment = new Comment({
+      stationId,
+      userId: user._id,
+      comment: comment.trim(), // Loại bỏ khoảng trắng thừa
+      star,
+    });
+
     await newComment.save();
 
-    res.json({ message: "Comment added successfully", comment: newComment });
+    res.json({
+      message: "Thêm bình luận thành công",
+      comment: newComment,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Lỗi server khi thêm bình luận" });
   }
 };
 

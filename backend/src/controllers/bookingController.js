@@ -5,6 +5,20 @@ const ChargingStation = require("../models/chargingStation");
 module.exports.createBooking = async (req, res) => {
   try {
     const { userId, stationId, startTime, endTime, paymentMethod } = req.body;
+    const currentTime = new Date(); // Thời gian hiện tại
+
+    // 0. Kiểm tra thời gian hợp lệ (NEW LOGIC)
+    if (new Date(startTime) < currentTime) {
+      return res.status(400).json({
+        message: "Thời gian bắt đầu không được trong quá khứ",
+      });
+    }
+
+    if (new Date(endTime) <= new Date(startTime)) {
+      return res.status(400).json({
+        message: "Thời gian kết thúc phải sau thời gian bắt đầu",
+      });
+    }
 
     // 1. Kiểm tra trạm có tồn tại và còn slot không
     const station = await ChargingStation.findById(stationId);

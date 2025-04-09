@@ -1,5 +1,5 @@
 const User = require("../models/users");
-const clerk = require("@clerk/clerk-sdk-node");
+const clerk = require("../utils/clerk");
 const ChargingStation = require("../models/chargingStation");
 
 // lấy thông tin người dùng
