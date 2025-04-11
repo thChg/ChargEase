@@ -36,28 +36,41 @@ interface ChargingStation {
   availableSlots: number;
 }
 
+type LocationType = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+interface MapComponentProps {
+  userLocation: LocationType | null;
+  setUserLocation: (location: LocationType) => void;
+}
+
 const OPENROUTESERVICE_API_KEY =
   "5b3ce3597851110001cf6248ac34d8a92f584c05939953f73989bb8a";
 
-const MapComponent: React.FC = () => {
-  // const { chargingStations, loading } = useSelector(
-  //   (state: RootState) => state.ChargingStations
-  // );
-  const loading = false;
-  const chargingStations = [
-    {
-      id: "2",
-      latitude: 21.0362,
-      longitude: 105.836,
-      name: "Tay Ho Charging Station",
-      distance: 0,
-      address: "address",
-      status: "Available",
-      isFavourite: true,
-      reachable: true,
-    },
-  ];
-  const [userLocation, setUserLocation] = useState<Region | null>(null);
+const MapComponent: React.FC<MapComponentProps> = ({userLocation, setUserLocation}) => {
+  const { chargingStations, loading } = useSelector(
+    (state: RootState) => state.ChargingStations
+  );
+  // const loading = false;
+  // const chargingStations = [
+  //   {
+  //     id: "2",
+  //     latitude: 21.0362,
+  //     longitude: 105.836,
+  //     name: "Tay Ho Charging Station",
+  //     distance: 0,
+  //     address: "address",
+  //     status: "Available",
+  //     isFavourite: true,
+  //     reachable: true,
+  //   },
+  // ];
+  console.log(chargingStations);
+
   const [selectedStation, setSelectedStation] =
     useState<ChargingStation | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -218,7 +231,7 @@ const MapComponent: React.FC = () => {
     );
   }
 
-  return loading ? (
+  return chargingStations.length === 0 || loading ? (
     <SplashScreenComponent />
   ) : (
     userLocation && (

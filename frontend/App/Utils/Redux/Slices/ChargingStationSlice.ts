@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import chargingStations from "../../dummyData";
 import axios from "axios";
+import api from "../../axiosInstance";
 
 const BACKEND_URL = "http://192.168.1.8:8080";
 
@@ -31,13 +32,13 @@ const initialState: chargingStationsState = {
 
 export const fetchChargingStations = createAsyncThunk(
   "/charger/findCharging",
-  async (accessToken: string, { rejectWithValue }) => {
+  async ({
+    longitude,
+    latitude,
+  }: { longitude: number; latitude: number }, { rejectWithValue }) => {
     try {
       console.log(`${BACKEND_URL}/charger/findCharging`);
-      const response = await axios.get(`${BACKEND_URL}/charger/findCharging`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      console.log(response.data);
+        const response = await api.get(`/charger/findCharging?longitude=${longitude}&latitude=${latitude}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -46,6 +47,8 @@ export const fetchChargingStations = createAsyncThunk(
     }
   }
 );
+
+// export const handleFavouriteStation = createAsyncThunk("/user", ())
 
 const ChargingStationSlice = createSlice({
   name: "ChargingStations",
@@ -61,9 +64,7 @@ const ChargingStationSlice = createSlice({
         fetchChargingStations.fulfilled,
         (state, action: PayloadAction<ChargingStation>) => {
           state.loading = false;
-          state.chargingStations = Array.isArray(action.payload)
-            ? action.payload
-            : [action.payload];
+          state.chargingStations = action.payload.stations;
         }
       )
       .addCase(fetchChargingStations.rejected, (state, action) => {

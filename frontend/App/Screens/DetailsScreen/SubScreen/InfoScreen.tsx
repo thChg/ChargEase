@@ -3,7 +3,7 @@ import React from "react";
 import { ScrollView, View, Text, StyleSheet } from "react-native";
 import Colors from "../../../Utils/Colors";
 
-const InfoScreen = ({ selectedStation }) => {
+const InfoScreen = ({ selectedStation } : any) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
@@ -15,12 +15,8 @@ const InfoScreen = ({ selectedStation }) => {
             color={Colors.PRIMARY}
           />
         </View>
-        {/* <Text style={styles.text}>{selectedStation.description || "No description available."}</Text> */}
-        <Text>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam
-          sapiente, corporis animi distinctio aliquid neque excepturi dolores
-          similique, laboriosam corrupti nulla, commodi culpa accusantium ipsum
-          blanditiis? Nesciunt necessitatibus qui alias.
+        <Text style={styles.text}>
+          {selectedStation.introduce || "No description available."}
         </Text>
       </View>
 
@@ -35,17 +31,29 @@ const InfoScreen = ({ selectedStation }) => {
             : "Free parking"}
         </Text>
       </View>
-
       <View style={styles.section}>
         <View style={styles.titleRow}>
           <Text style={styles.sectionTitle}>Opening Hours</Text>
           <Ionicons name="time-sharp" size={25} color={Colors.PRIMARY} />
         </View>
-        <Text style={styles.text}>
-          {selectedStation.openingHour && selectedStation.closingHour
-            ? `${selectedStation.openingHour} - ${selectedStation.closingHour}`
-            : "No hours available"}
-        </Text>
+        <Text style={styles.text}>{selectedStation.operatingHours}</Text>
+      </View>
+      <View style={styles.section}>
+        <View style={styles.titleRow}>
+          <Text style={styles.sectionTitle}>Amenities</Text>
+          <Ionicons name="pricetags-outline" size={25} color={Colors.PRIMARY} />
+        </View>
+        <View style={styles.amenitiesContainer}>
+          {selectedStation.amenities && selectedStation.amenities.length > 0 ? (
+            selectedStation.amenities.map((item: string, index: number) => (
+              <View key={index} style={styles.amenityTag}>
+                <Text style={styles.amenityText}>{item}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.text}>No amenities listed.</Text>
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -84,6 +92,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#555",
     lineHeight: 22,
+  },
+  amenitiesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+  },
+  amenityTag: {
+    backgroundColor: "#e0f0ff",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  amenityText: {
+    color: Colors.PRIMARY,
+    fontWeight: "500",
+    fontSize: 14,
   },
 });
 

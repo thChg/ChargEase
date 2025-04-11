@@ -16,25 +16,40 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../Utils/Redux/Store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+type LocationType = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
 interface CarLoginPopupProps {
   modalVisible: boolean;
   setModalVisible: (modalVisible: boolean) => void;
+  userLocation: LocationType | null;
 }
 
-const BACKEND_URL = "http://192.168.1.8:8080";
+const BACKEND_URL = "http://192.168.1.4:8080";
 
 const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
   modalVisible,
   setModalVisible,
+  userLocation,
 }) => {
-  const dispatch = useDispatch<AppDispatch>()
-  const [accessToken, setAccessToken] = useState<string>("");
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleRedirect = async (code: string) => {
     if (code) {
-      const response = await axios.get(`${BACKEND_URL}/smartcar/callback?code=${code}`);
-      setAccessToken(response.data.accessToken);
-      dispatch(fetchChargingStations(response.data.accessToken));
+      const response = await axios.get(
+        `${BACKEND_URL}/smartcar/callback?code=${code}`
+      );
+      AsyncStorage.setItem("accessToken", response.data.accessToken)
+      dispatch(
+        fetchChargingStations({
+          longitude: userLocation.longitude,
+          latitude: userLocation.latitude,
+        })
+      );
       setModalVisible(false); // Close the modal after successful login
     }
   };
@@ -42,12 +57,12 @@ const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
   const handleLogin = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/smartcar/login`);
-      
+
       if (!response.data.url) {
         console.error("Error: No login URL received from backend.");
         return;
       }
-      
+
       const result = await WebBrowser.openAuthSessionAsync(response.data.url);
       setModalVisible(false); // Close the modal after login attempt
       handleRedirect(result.url.split("=")[1]);
@@ -58,13 +73,13 @@ const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
 
   const handleCloseModal = async () => {
     // Make sure to mark the user as having visited the home
-    await AsyncStorage.setItem('hasVisitedHome', 'true');
+    await AsyncStorage.setItem("hasVisitedHome", "true");
     setModalVisible(false);
   };
 
   useEffect(() => {
     const checkFirstVisit = async () => {
-      const hasVisited = await AsyncStorage.getItem('hasVisitedHome');
+      const hasVisited = await AsyncStorage.getItem("hasVisitedHome");
       if (!hasVisited) {
         setModalVisible(true); // Show the modal only if it's the first visit
       }
@@ -92,10 +107,7 @@ const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
               Connect to my vehicle
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleCloseModal}
-            style={styles.button}
-          >
+          <TouchableOpacity onPress={handleCloseModal} style={styles.button}>
             <Text style={styles.buttonText}>Close</Text>
           </TouchableOpacity>
         </View>
