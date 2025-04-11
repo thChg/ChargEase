@@ -90,6 +90,7 @@ module.exports.getChargingStations = async (req, res) => {
           distance: distance.toFixed(2),
           isFavourite: user ? user.favourites.includes(station._id) : false,
           reachable: distance <= maxRange,
+          fee: station.fee,
         };
       })
       .sort((a, b) => a.distance - b.distance);
@@ -123,7 +124,7 @@ module.exports.summaryinfo = async (req, res) => {
       introduce: station.introduce,
       amenities: station.amenities,
       rating: {
-        average: parseFloat(averageRating),
+        averageStar: parseFloat(averageRating),
         totalReviews: comments.length,
       },
       operatingHours: station.operatingHours,
@@ -134,6 +135,7 @@ module.exports.summaryinfo = async (req, res) => {
   }
 };
 
+// thông tin đầy đủ của trạm xạc
 module.exports.fullinfo = async (req, res) => {
   try {
     const station = await ChargingStation.findById(req.params.id);
