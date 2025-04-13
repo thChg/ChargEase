@@ -57,11 +57,7 @@ exports.handleAuthCallback = async (req, res, next) => {
 // 🔹 Bước 4: Lấy thông tin xe
 exports.getVehicleInfo = async (req, res) => {
   try {
-    let accessToken = req.query.token || req.headers.authorization;
-
-    if (accessToken && accessToken.startsWith("Bearer ")) {
-      accessToken = accessToken.split(" ")[1];
-    }
+    let accessToken = req.headers["smartcar-token"];
 
     if (!accessToken) {
       return res.status(401).json({ message: "Missing access token" });

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const smartcarController = require("../controllers/smartCarController");
 const checkSmartcarToken = require("../middlewares/checkSmartcarToken");
+const authMiddleware = require("../middlewares/clerk");
 
 router.get("/login", smartcarController.getAuthUrl);
 router.get("/callback", smartcarController.handleAuthCallback);
