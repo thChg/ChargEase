@@ -8,7 +8,8 @@ const ChargingStationSchema = new mongoose.Schema({
   slot: { type: Number, required: true }, // Tổng số khe sạc
   usedSlot: { type: Number, required: true, default: 0 }, // Số khe đã sử dụng
   introduce: { type: String, required: true },
-  fee: { type: Number, required: true },
+  baseFee: { type: Number, required: true }, // Lưu số: 6000
+  feeDescription: { type: String }, // Lưu mô tả: "Giảm 20% khi mua sắm tại VinMart"
   workingHours: { type: String, required: true },
   amenities: {
     type: [String], // Mảng các tiện ích

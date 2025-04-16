@@ -6,10 +6,6 @@ const authMiddleware = require("../middlewares/clerk");
 
 router.get("/login", smartcarController.getAuthUrl);
 router.get("/callback", smartcarController.handleAuthCallback);
-router.get(
-  "/vehicle-info",
-  checkSmartcarToken,
-  smartcarController.getVehicleInfo
-);
+router.get("/vehicle-info", authMiddleware, smartcarController.getVehicleInfo);
 
 module.exports = router;
