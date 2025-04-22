@@ -1,12 +1,11 @@
 const express = require("express");
 const controllers = require("../controllers/bookingController");
-const authMiddleware = require("../middlewares/clerk");
 const router = express.Router();
 
-router.post("/", authMiddleware, controllers.createBooking);
+router.post("/", controllers.createBooking);
 
-router.get("/getHistory", authMiddleware, controllers.getBookingHistory);
+router.get("/getHistory", controllers.getBookingHistory);
 
-router.patch("/cancelBooking/:id", authMiddleware, controllers.cancelBooking);
+router.patch("/cancelBooking/:id", controllers.cancelBooking);
 
 module.exports = router;

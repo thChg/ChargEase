@@ -43,7 +43,7 @@ const LoginScreen = () => {
       <Image source={require('../../../assets/images/logo-app.png')} style={styles.logo} />
       <Image source={require('../../../assets/images/evchargin.jpeg')} style={styles.illustration} />
 
-      <Text style={styles.title}>Let's you in</Text>
+      <Text style={styles.title}>Let's login</Text>
       <TouchableOpacity style={styles.button} onPress={() => onPress('oauth_google')}>
         <Image
           source={{ uri: "https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-1024.png" }}

@@ -6,20 +6,11 @@ const User = require("../models/users");
 // API thêm bình luận
 module.exports.comment = async (req, res) => {
   try {
-    const { comment, star } = req.body;
+    const { comment, star, userID } = req.body;
     const { stationId } = req.params;
-    const clerkUserId = req.auth.userId;
 
-    if (!clerkUserId) {
+    if (!userID) {
       return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // 1. Tìm user trong database bằng clerkUserId
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    const username = clerkUser.username;
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
     }
 
     // 1. Kiểm tra station có tồn tại không
@@ -27,7 +18,6 @@ module.exports.comment = async (req, res) => {
     if (!station) {
       return res.status(404).json({ message: "Trạm sạc không tồn tại" });
     }
-    console.log("tessssssssssssss");
 
     // 2. Kiểm tra comment không được trống (NEW LOGIC)
     if (!comment || comment.trim() === "") {
@@ -46,7 +36,7 @@ module.exports.comment = async (req, res) => {
     // 4. Tạo comment mới
     const newComment = new Comment({
       stationId,
-      userId: user._id,
+      userId: userID,
       comment: comment.trim(), // Loại bỏ khoảng trắng thừa
       star,
     });

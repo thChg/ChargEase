@@ -10,6 +10,7 @@ const authClient = new smartcar.AuthClient({
 
 // 🔹 Bước 1: Tạo URL đăng nhập
 exports.getAuthUrl = (req, res) => {
+  console.log("authing")
   const authUrl = authClient.getAuthUrl([
     "read_vehicle_info",
     "read_location",

@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import Colors from "../Utils/Colors";
 import { useEffect, useState } from "react";
-import * as Linking from "expo-linking";
+import api from "../Utils/axiosInstance";
 import axios from "axios";
 import * as WebBrowser from "expo-web-browser";
 import { fetchChargingStations } from "../Utils/Redux/Slices/ChargingStationSlice";
@@ -29,8 +29,6 @@ interface CarLoginPopupProps {
   userLocation: LocationType | null;
 }
 
-const BACKEND_URL = "http://192.168.1.4:8080";
-
 const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
   modalVisible,
   setModalVisible,
@@ -40,10 +38,10 @@ const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
 
   const handleRedirect = async (code: string) => {
     if (code) {
-      const response = await axios.get(
-        `${BACKEND_URL}/smartcar/callback?code=${code}`
+      const response = await api.get(
+        `/smartcar/callback?code=${code}`
       );
-      AsyncStorage.setItem("accessToken", response.data.accessToken)
+      AsyncStorage.setItem("smartcarToken", response.data.accessToken)
       dispatch(
         fetchChargingStations({
           longitude: userLocation.longitude,
@@ -56,7 +54,9 @@ const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
 
   const handleLogin = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/smartcar/login`);
+      const token = await AsyncStorage.getItem("clerkToken");
+      console.log(token)
+      const response = await axios.get(`http://192.168.1.6:8080/smartcar/login`);
 
       if (!response.data.url) {
         console.error("Error: No login URL received from backend.");

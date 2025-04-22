@@ -2,54 +2,27 @@ const User = require("../models/users");
 const clerk = require("../utils/clerk");
 const ChargingStation = require("../models/chargingStation");
 
-// lấy thông tin người dùng
-module.exports.getUserInfo = async (req, res) => {
-  try {
-    const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
-    if (!clerkUserId) {
-      return res.status(401).json({ message: "Unauthorized user" });
-    }
-    // Lấy thông tin user từ Clerk
-    const clerkUser = await clerk.users.getUser(clerkUserId);
-    const username = clerkUser.username; // Lấy username
-    if (!username) {
-      return res.status(404).json({ message: "Username not found in Clerk" });
-    }
-    // Tìm user trong MongoDB bằng username
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ message: "User not found in database" });
-    }
-    // Trả về toàn bộ thông tin của user trong DB
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
-
 // thêm trạm xạc ưa thích
 module.exports.addFavoriteCharger = async (req, res) => {
   try {
-    const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
+    const userID = req.body.userID;
     const chargerId = req.params.id;
 
-    if (!clerkUserId) {
+    if (!userID) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Lấy thông tin user từ Clerk
-    const clerkUser = await clerk.users.getUser(clerkUserId);
-    const username = clerkUser.username; // Lấy username
-
-    if (!username) {
-      return res.status(404).json({ message: "Username not found in Clerk" });
-    }
-
     // Tìm user trong MongoDB bằng username
-    const user = await User.findOne({ username });
-
+    const user = await User.findOne({ _id: userID });
+    
     if (!user) {
-      return res.status(404).json({ message: "User not found in database" });
+      await User.create({
+        _id: userID,
+        favourites: [chargerId],
+      });
+      return res.status(201).json({
+        message: "User created and charger added to favorites",
+      });
     }
 
     // Thêm charger vào favorites
@@ -71,23 +44,15 @@ module.exports.addFavoriteCharger = async (req, res) => {
 // xóa trạm xạc ưa thích
 module.exports.removeFavoriteCharger = async (req, res) => {
   try {
-    const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
+    const userID = req.body.userID;
     const chargerId = req.params.id;
 
-    if (!clerkUserId) {
+    if (!userID) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Lấy thông tin user từ Clerk
-    const clerkUser = await clerk.users.getUser(clerkUserId);
-    const username = clerkUser.username; // Lấy username
-
-    if (!username) {
-      return res.status(404).json({ message: "Username not found in Clerk" });
-    }
-
     // Tìm user trong MongoDB bằng username
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ _id: userID });
 
     if (!user) {
       return res.status(404).json({ message: "User not found in database" });

@@ -1,6 +1,4 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import chargingStations from "../../dummyData";
-import axios from "axios";
 import api from "../../axiosInstance";
 
 const BACKEND_URL = "http://192.168.1.8:8080";
