@@ -5,76 +5,98 @@ const ChargingStation = require("../models/chargingStation");
 module.exports.createBooking = async (req, res) => {
   try {
     const { userId, stationId, startTime, endTime, paymentMethod } = req.body;
-    const currentTime = new Date(); // Thời gian hiện tại
 
-    // 0. Kiểm tra thời gian hợp lệ (NEW LOGIC)
-    if (new Date(startTime) < currentTime) {
-      return res.status(400).json({
-        message: "Thời gian bắt đầu không được trong quá khứ",
-      });
+    // 1. Chuyển đổi sang giờ VN (UTC+7) để so sánh
+    const getVnTime = (date) => {
+      const d = new Date(date);
+      return new Date(d.getTime() + 7 * 60 * 60 * 1000); // +7 giờ
+    };
+
+    console.log(startTime);
+    console.log(endTime);
+
+    const currentVnTime = getVnTime(new Date());
+    const startVnTime = getVnTime(new Date(startTime));
+    const endVnTime = getVnTime(new Date(endTime));
+
+    console.log("Current VN Time:", currentVnTime.toISOString());
+    console.log("Start VN Time:", startVnTime.toISOString());
+    console.log("End VN Time:", endVnTime.toISOString());
+
+    // 2. Validate thời gian (so sánh bằng timestamp)
+    if (startVnTime.getTime() < currentVnTime.getTime()) {
+      return res
+        .status(400)
+        .json({ message: "Thời gian bắt đầu không được trong quá khứ" });
     }
 
-    if (new Date(endTime) <= new Date(startTime)) {
-      return res.status(400).json({
-        message: "Thời gian kết thúc phải sau thời gian bắt đầu",
-      });
+    if (endVnTime.getTime() <= startVnTime.getTime()) {
+      return res
+        .status(400)
+        .json({ message: "Thời gian kết thúc phải sau thời gian bắt đầu" });
     }
 
-    // 1. Kiểm tra trạm có tồn tại và còn slot không
+    // 3. Kiểm tra trạm
     const station = await ChargingStation.findById(stationId);
     if (!station) {
       return res.status(404).json({ message: "Trạm sạc không tồn tại" });
     }
 
-    // 2. Check overlapping bookings
+    // 4. Check overlapping (chuyển đổi điều kiện sang VN time)
     const overlappingBookings = await Booking.find({
       stationId,
       status: { $in: ["confirmed", "pending"] },
       $or: [
         {
-          startTime: { $lt: new Date(endTime) },
-          endTime: { $gt: new Date(startTime) },
+          startTime: { $lt: endTime },
+          endTime: { $gt: startTime },
         },
       ],
     });
 
     if (overlappingBookings.length >= station.slot) {
-      return res
-        .status(400)
-        .json({ message: "Trạm đã hết slot trong khoảng thời gian này" });
+      return res.status(400).json({
+        message: `Trạm đã hết slot từ ${convertToVnTime(
+          startTime
+        )} đến ${convertToVnTime(endTime)}`,
+      });
     }
 
-    // 3. Tính toán giá (ví dụ: 10.000 VND/phút)
-    const durationHours =
-      (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60);
-    const totalCost = station.fee * durationHours;
+    // 5. Tính toán giá
+    const durationHours = (endVnTime - startVnTime) / (1000 * 60 * 60);
+    const totalCost = station.baseFee * durationHours;
 
-    // 4. Tạo booking
+    // 6. Tạo booking (lưu thời gian dạng UTC trong DB)
     const booking = new Booking({
       userId,
       stationId,
-      startTime,
-      endTime,
+      startTime: new Date(startTime), // Lưu nguyên bản (đã validate ISO 8601)
+      endTime: new Date(endTime),
       totalCost,
       paymentMethod,
       status: "confirmed",
     });
 
     await booking.save();
-
-    // 5. Cập nhật usedSlot của trạm
-    station.usedSlot += 1;
+    station.usedSlot = overlappingBookings.length + 1;
     await station.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       bookingId: booking._id,
       status: booking.status,
-      totalCost: booking.totalCost,
+      totalCost,
       stationName: station.name,
+      timeInfo: {
+        startTime: startVnTime.toISOString(),
+        endTime: endVnTime.toISOString(),
+      },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi server khi tạo booking" });
+    console.error("[Booking Error]", error);
+    return res.status(500).json({
+      message: "Lỗi hệ thống khi tạo booking",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

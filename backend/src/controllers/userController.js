@@ -7,7 +7,7 @@ module.exports.getUserInfo = async (req, res) => {
   try {
     const clerkUserId = req.auth.userId; // Lấy Clerk ID từ middleware
     if (!clerkUserId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Unauthorized user" });
     }
     // Lấy thông tin user từ Clerk
     const clerkUser = await clerk.users.getUser(clerkUserId);
