@@ -4,9 +4,11 @@ import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CarLoginPopup from '../../Components/CarLoginPopup';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { Region } from 'react-native-maps';
 
 export default function HomeScreen() {
-  const [modalVisible, setModalVisible] = useState(false);  
+  const [modalVisible, setModalVisible] = useState(true);  
+  const [userLocation, setUserLocation] = useState<Region | null>(null);
   // Check if it's the first visit when screen is focused (navigating to HomeScreen)
   useFocusEffect(
     React.useCallback(() => {
@@ -23,8 +25,8 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <CarLoginPopup modalVisible={modalVisible} setModalVisible={setModalVisible} />
-      <MapComponent />
+      <CarLoginPopup modalVisible={modalVisible} setModalVisible={setModalVisible} userLocation={userLocation}/>
+      <MapComponent userLocation={userLocation} setUserLocation={setUserLocation}/>
     </View>
   );
 }

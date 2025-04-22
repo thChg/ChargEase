@@ -3,29 +3,26 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Onboarding from "react-native-onboarding-swiper";
 import { useNavigation } from "@react-navigation/native";
+import Colors from "../../Utils/Colors";
 
-// Custom Skip Button
 const SkipButton = ({ ...props }) => (
   <TouchableOpacity style={styles.skipButton} {...props}>
-    <Text style={styles.skipText}>Bỏ qua</Text>
+    <Text style={styles.skipText}>Skip</Text>
   </TouchableOpacity>
 );
 
-// Custom Next Button
 const NextButton = ({ ...props }) => (
   <TouchableOpacity style={styles.nextButton} {...props}>
-    <Text style={styles.nextText}>Tiếp</Text>
+    <Text style={styles.nextText}>Next</Text>
   </TouchableOpacity>
 );
 
-// Custom Done Button
 const DoneButton = ({ ...props }) => (
   <TouchableOpacity style={styles.doneButton} {...props}>
-    <Text style={styles.doneText}>Xong</Text>
+    <Text style={styles.doneText}>Done</Text>
   </TouchableOpacity>
 );
 
-// Custom Dots Indicator
 const Dots = ({ selected }: { selected: boolean }) => (
   <View style={[styles.dot, selected ? styles.activeDot : {}]} />
 );
@@ -50,20 +47,20 @@ const OnboardingScreen = () => {
         {
           backgroundColor: "#fff",
           image: <Image source={require("../../../assets/images/onboarding1.png")} style={styles.image} />,
-          title: "Chào mừng bạn!",
-          subtitle: "Khám phá ứng dụng tuyệt vời của chúng tôi.",
+          title: "Welcome!",
+          subtitle: "Explore our application now.",
         },
         {
           backgroundColor: "#fff",
           image: <Image source={require("../../../assets/images/onboarding2.png")} style={styles.image} />,
-          title: "Tính năng mạnh mẽ",
-          subtitle: "Dễ dàng quản lý công việc với các công cụ tiện ích.",
+          title: "Powerful Functionalities!",
+          subtitle: "Find charging stations and book them with ease.",
         },
         {
           backgroundColor: "#fff",
           image: <Image source={require("../../../assets/images/onboarding3.png")} style={styles.image} />,
-          title: "Bắt đầu ngay!",
-          subtitle: "Tạo tài khoản để trải nghiệm ứng dụng.",
+          title: "Start Now!",
+          subtitle: "Let's login and start using ChargEase now.",
         },
       ]}
     />
@@ -77,14 +74,12 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   skipButton: {
+    marginLeft: 10,
     padding: 10,
-    position: "absolute",
-    left: 20,
-    top: 20,
   },
   skipText: {
     fontSize: 16,
-    color: "#555",
+    color: Colors.GRAY,
     fontWeight: "bold",
   },
   nextButton: {
@@ -93,7 +88,7 @@ const styles = StyleSheet.create({
   },
   nextText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: Colors.PRIMARY,
     fontWeight: "bold",
   },
   doneButton: {
@@ -102,7 +97,7 @@ const styles = StyleSheet.create({
   },
   doneText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: Colors.PRIMARY,
     fontWeight: "bold",
   },
   dot: {
@@ -113,7 +108,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeDot: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.PRIMARY,
     width: 10,
     height: 10,
   },

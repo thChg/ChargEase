@@ -6,12 +6,14 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import StarRating from "../../../Components/StarRating";
+import Colors from "../../../Utils/Colors";
 
 interface ReviewScreenProps {
-  selectedStation: ChargingStation
+  selectedStation: ChargingStation;
 }
 
 interface ChargingStation {
@@ -63,81 +65,64 @@ const dummyReview = [
     rating: 2,
     comment: "Had to wait too long. Only one charger was working.",
   },
-]
+];
 
 const ReviewScreen: React.FC<ReviewScreenProps> = ({ selectedStation }) => {
-  
   // Dummy reviews (replace with actual data from API)
   const [reviews, setReviews] = useState(selectedStation.reviews || []);
   const [sortedByDate, setSortedByDate] = useState(false);
-
-  // Sort reviews by date
-  const sortReviews = () => {
-    const sortedReviews = [...reviews].sort((a, b) =>
-      sortedByDate ? a.timestamp.localeCompare(b.timestamp) : b.timestamp.localeCompare(a.timestamp)
-    );
-    setReviews(sortedReviews);
-    setSortedByDate(!sortedByDate);
-  };
+  console.log(selectedStation.rating.breakdown)
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Rating Summary Section */}
-      <View style={styles.ratingSummary}>
-        {/* <Text style={styles.ratingNumber}>{Number(selectedStation.rating).toFixed(1)}</Text> */}
-        <Text style={styles.ratingNumber}>4.5</Text>
-        <StarRating rating={5} />
-        <Text style={styles.ratingCount}>({selectedStation.totalRatings})</Text>
-        {/* <View style={styles.starRow}>
-          {[...Array(Math.floor(selectedStation.rating))].map((_, index) => (
-            <Ionicons key={`full-${index}`} name="star" size={20} color="#FFD700" />
-          ))}
-          {selectedStation.rating % 1 >= 0.5 && <Ionicons name="star-half" size={20} color="#FFD700" />}
-          <Text style={styles.reviewCount}>({selectedStation.totalReviews} reviews)</Text>
-        </View> */}
-        
-        {/* Rating Breakdown */}
-        {Object.entries(selectedStation.ratingDistribution || {}).map(([star, count]) => (
-          <View key={star} style={styles.ratingRow}>
-            <Text style={styles.starLabel}>{star}</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${(Number(count) / selectedStation.totalReviews) * 100}%` }]} />
-            </View>
-          </View>
+      <ScrollView style={styles.container}>
+        {/* Rating Summary Section */}
+        <View style={styles.ratingSummary}>
+          <Text style={styles.ratingNumber}>{Number(selectedStation.rating.totalReviews).toFixed(1)}</Text>
+          <StarRating rating={5} />
+          <Text style={styles.ratingCount}>
+            ({selectedStation.totalRatings})
+          </Text>
+
+          {/* Rating Breakdown */}
+          {Object.entries(selectedStation.ratingDistribution || {}).map(
+            ([star, count]) => (
+              <View key={star} style={styles.ratingRow}>
+                <Text style={styles.starLabel}>{star}</Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${
+                          (Number(count) / selectedStation.totalReviews) * 100
+                        }%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            )
+          )}
+        </View>
+        <TouchableOpacity style={styles.commentButton}>
+          <Text style={styles.commentButtonText}>Write a Comment</Text>
+        </TouchableOpacity>
+        {/* Reviews List */}
+        {dummyReview.map((item) => (
+    <View key={item.id} style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <Text style={styles.username}>{item.username}</Text>
+        <Text style={styles.timestamp}>{item.timestamp}</Text>
+      </View>
+      <View style={styles.starRow}>
+        {[...Array(item.rating)].map((_, index) => (
+          <Ionicons key={index} name="star" size={16} color="#FFD700" />
         ))}
       </View>
-
-      {/* Sort Button */}
-      <TouchableOpacity style={styles.sortButton} onPress={sortReviews}>
-        <Text style={styles.sortButtonText}>Sort by Date</Text>
-        <Ionicons name="arrow-down" size={18} color="white" />
-      </TouchableOpacity>
-
-      {/* Reviews List */}
-      <FlatList
-        data={dummyReview}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.reviewCard}>
-            <View style={styles.reviewHeader}>
-              <Text style={styles.username}>{item.username}</Text>
-              <Text style={styles.timestamp}>{item.timestamp}</Text>
-            </View>
-            <View style={styles.starRow}>
-              {[...Array(item.rating)].map((_, index) => (
-                <Ionicons key={index} name="star" size={16} color="#FFD700" />
-              ))}
-            </View>
-            <Text style={styles.reviewText}>{item.comment}</Text>
-          </View>
-        )}
-      />
-
-      {/* Write a Comment Button */}
-      <TouchableOpacity style={styles.commentButton}>
-        <Text style={styles.commentButtonText}>Write a Comment</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+      <Text style={styles.reviewText}>{item.comment}</Text>
+    </View>
+  ))}
+      </ScrollView>
   );
 };
 
@@ -152,73 +137,56 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
-    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   ratingNumber: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 36,
+    fontWeight: "700",
     color: "#333",
+    textAlign: "center",
   },
-  starRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 5,
-  },
-  reviewCount: {
+  ratingCount: {
     fontSize: 14,
     color: "#666",
-    marginLeft: 5,
+    textAlign: "center",
+    marginTop: 4,
   },
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 4,
-  },
-  ratingCount: {
-    fontSize: 14,
-    color: "#555",
-    marginLeft: 5,
+    marginTop: 8,
   },
   starLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    width: 20,
+    width: 24,
+    fontSize: 14,
+    color: "#444",
   },
   progressBar: {
     flex: 1,
-    height: 6,
-    backgroundColor: "#ddd",
+    height: 8,
+    backgroundColor: "#e0e0e0",
     borderRadius: 4,
+    marginLeft: 8,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#2ecc71",
-  },
-  sortButton: {
-    flexDirection: "row",
-    backgroundColor: "#3498db",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  sortButtonText: {
-    fontSize: 16,
-    color: "white",
-    marginRight: 8,
+    backgroundColor: "#4caf50",
+    borderRadius: 4,
   },
   reviewCard: {
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
   reviewHeader: {
@@ -227,30 +195,34 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   username: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#333",
   },
   timestamp: {
     fontSize: 12,
-    color: "#777",
+    color: "#888",
+  },
+  starRow: {
+    flexDirection: "row",
+    marginBottom: 6,
   },
   reviewText: {
-    fontSize: 14,
-    color: "#444",
-    marginTop: 6,
+    fontSize: 15,
+    color: "#555",
+    lineHeight: 22,
   },
   commentButton: {
-    backgroundColor: "#27ae60",
-    padding: 14,
-    borderRadius: 8,
+    backgroundColor: Colors.PRIMARY,
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
+    marginBottom: 16,
   },
   commentButtonText: {
+    color: "#fff",
+    fontWeight: "600",
     fontSize: 16,
-    color: "white",
-    fontWeight: "bold",
   },
 });
 

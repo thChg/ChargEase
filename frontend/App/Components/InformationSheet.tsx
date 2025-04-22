@@ -36,19 +36,23 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
     navigation.navigate("Details", { selectedStation });
   };
 
+  const handleFavourite = () => {
+    selectedStation.isFavourite = selectedStation?.isFavourite ? false : true;
+  }
+
   return (
     <ActionSheet id="stationDetails">
       {selectedStation && (
         <View style={styles.actionSheet}>
           <View style={styles.header}>
             <Text style={styles.stationTitle}>{selectedStation.name}</Text>
-            <TouchableOpacity style={styles.favouriteButton}>
-              <Ionicons name="heart" size={20} color={Colors.WHITE} />
+            <TouchableOpacity style={styles.favouriteButton} onPress={() => handleFavourite()}>
+              <Ionicons name={selectedStation.isFavourite ? "heart-dislike" : "heart"} size={20} color={Colors.WHITE} />
             </TouchableOpacity>
           </View>
           <View style={styles.actionSheetContent}>
             <Text style={styles.stationDistance}>
-              Distance: {selectedStation.distance.toFixed(2)} km
+              Distance: {Number(selectedStation.distance).toFixed(2)} km
             </Text>
           </View>
           <View style={styles.actionSheetButtons}></View>

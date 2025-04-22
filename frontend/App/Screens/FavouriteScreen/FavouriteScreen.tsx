@@ -40,11 +40,10 @@ type NavigationProps = NativeStackNavigationProp<
 >;
 
 export default function FavouriteScreen() {
-  // const favouriteStations = useSelector(
-  //   (state: RootState) => state.ChargingStations.chargingStations
-  // );
-  const [favouriteStations, setFavouriteStations] =
-    useState<ChargingStation[]>(chargingStations);
+  const favouriteStations = useSelector(
+    (state: RootState) => state.ChargingStations.chargingStations
+  );
+  console.log(favouriteStations)
   const [searchingResult, setSearchingResult] =
     useState<ChargingStation[]>(favouriteStations);
   const [searchQuery, setSearchQuery] = useState<string>("");

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,14 +10,27 @@ import DetailsTabNavigation from "../../Navigations/DetailsTabNavigation";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "../../Utils/Colors";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
-import { BottomTabParamList } from "../../Navigations/types";
 import StarRating from "../../Components/StarRating";
-
-type NavigationProps = NativeStackNavigationProp<BottomTabParamList, "detail">;
+import api from "../../Utils/axiosInstance";
 
 export default function DetailsScreen({ route }: any) {
   const { selectedStation } = route.params;
+  const [data, setData] = useState();
+  useEffect(() => {
+    console.log("using effect insilde detail")
+    const fetchStationFullInfo = async () => {
+      console.log("fetching station full information")
+      console.log("Selected station ID:", selectedStation.id);
+      const response = await api.get(
+        `/charger/fullinfo/${selectedStation.id}`
+      );
+      setData(response.data);
+      console.log("data ne cu")
+      console.log(response.data)
+    }
+    fetchStationFullInfo();
+  }, [selectedStation])
+
   const navigation = useNavigation<any>();
   const fetchDirection = () => {
     navigation.navigate("Main", {
@@ -26,13 +39,14 @@ export default function DetailsScreen({ route }: any) {
     });
   };
   return (
+    data &&
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{selectedStation.name}</Text>
+        <Text style={styles.title}>{data.name}</Text>
         <View style={styles.locationContainer}>
           <Ionicons name="compass-sharp" size={18} color="#555" />
           <Text style={styles.location}>
-            {selectedStation.location} 326 Pho Hoa Binh, Binh Gia, Lang Son
+            {selectedStation.location} {data.address}
           </Text>
         </View>
         <View style={styles.distanceContainer}>
@@ -40,11 +54,11 @@ export default function DetailsScreen({ route }: any) {
           <Text style={styles.distance}>{selectedStation.distance} km</Text>
         </View>
         <View style={styles.ratingContainer}>
-          <Text style={styles.ratingText}>4.5</Text>
+          <Text style={styles.ratingText}>{data.rating.avarage}</Text>
           <StarRating
             rating={selectedStation.rating}
           />
-          <Text style={styles.ratingCount}>({selectedStation.totalRatings})</Text>
+          <Text style={styles.ratingCount}>({data.rating.totalReviews})</Text>
         </View>
         <View style={styles.interactButtons}>
           <TouchableOpacity style={styles.directionButton}>
@@ -64,7 +78,7 @@ export default function DetailsScreen({ route }: any) {
           </TouchableOpacity>
         </View>
       </View>
-      <DetailsTabNavigation selectedStation={selectedStation} />
+      <DetailsTabNavigation selectedStation={data} />
     </SafeAreaView>
   );
 }
