@@ -7,8 +7,8 @@ router.post(
   controllers.addFavoriteCharger
 );
 
-router.delete(
-  "/delFarvorCharger/:id",
+router.post(
+  "/delFavouriteCharger/:id",
   controllers.removeFavoriteCharger
 );
 

@@ -1,10 +1,7 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  userId: {
-    type: String,
-    required: true,
-  },
+  _id: { type: String, required: true },
   favourites: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: "chargingstations",

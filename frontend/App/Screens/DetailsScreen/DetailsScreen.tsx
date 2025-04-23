@@ -17,16 +17,11 @@ export default function DetailsScreen({ route }: any) {
   const { selectedStation } = route.params;
   const [data, setData] = useState();
   useEffect(() => {
-    console.log("using effect insilde detail")
     const fetchStationFullInfo = async () => {
-      console.log("fetching station full information")
-      console.log("Selected station ID:", selectedStation.id);
       const response = await api.get(
         `/charger/fullinfo/${selectedStation.id}`
       );
       setData(response.data);
-      console.log("data ne cu")
-      console.log(response.data)
     }
     fetchStationFullInfo();
   }, [selectedStation])
@@ -113,10 +108,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 5,
     marginTop: 10,
+    flexWrap: "wrap",
   },
   location: {
     fontSize: 16,
     color: "#555",
+    paddingRight: 20, // for spacing
+  flexShrink: 1,     // allows text to shrink if needed
+  flexWrap: "wrap",
   },
   distanceContainer: {
     flexDirection: "row",

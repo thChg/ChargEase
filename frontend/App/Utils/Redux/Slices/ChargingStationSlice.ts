@@ -30,13 +30,15 @@ const initialState: chargingStationsState = {
 
 export const fetchChargingStations = createAsyncThunk(
   "/charger/findCharging",
-  async ({
-    longitude,
-    latitude,
-  }: { longitude: number; latitude: number }, { rejectWithValue }) => {
+  async (
+    { longitude, latitude }: { longitude: number; latitude: number },
+    { rejectWithValue }
+  ) => {
     try {
       console.log(`${BACKEND_URL}/charger/findCharging`);
-        const response = await api.get(`/charger/findCharging?longitude=${longitude}&latitude=${latitude}`);
+      const response = await api.get(
+        `/charger/findCharging?longitude=${longitude}&latitude=${latitude}`
+      );
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -46,7 +48,35 @@ export const fetchChargingStations = createAsyncThunk(
   }
 );
 
-// export const handleFavouriteStation = createAsyncThunk("/user", ())
+export const handleFavouriteStation = createAsyncThunk(
+  "/user/favourite",
+  async (
+    {
+      isFavourite,
+      userID,
+      stationID,
+    }: { isFavourite: boolean | null; userID: string | null; stationID: string | null},
+    { rejectWithValue }
+  ) => {
+    try {
+      let response;
+      if (isFavourite) {
+        response = await api.post(`/user/delFavouriteCharger/${stationID}`, {
+          userID: userID,
+        });
+      } else {
+        response = await api.post(`/user/favoriteCharger/${stationID}`, {
+          userID: userID,
+        });
+      }
+      return { stationID: stationID, isFavourite: !isFavourite };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch charging stations."
+      );
+    }
+  }
+);
 
 const ChargingStationSlice = createSlice({
   name: "ChargingStations",
@@ -68,6 +98,18 @@ const ChargingStationSlice = createSlice({
       .addCase(fetchChargingStations.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      .addCase(handleFavouriteStation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.chargingStations = state.chargingStations.map((station) => {
+          if (station.id === action.payload.stationID) {
+            return {
+              ...station,
+              isFavourite: action.payload.isFavourite,
+            };
+          }
+          return station;
+        });
       });
   },
 });

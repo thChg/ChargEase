@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import ActionSheet, { SheetManager } from "react-native-actions-sheet";
 import Colors from "../Utils/Colors";
@@ -6,6 +6,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../Navigations/AppNavigation";
+import { useUser } from "@clerk/clerk-expo";
+import { handleFavouriteStation } from "../Utils/Redux/Slices/ChargingStationSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../Utils/Redux/Store";
 
 interface ChargingStation {
   distance: number;
@@ -29,16 +33,33 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
   selectedStation,
   fetchDirections,
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  
+  const station = useSelector((state: RootState) =>
+    selectedStation
+      ? state.ChargingStations.chargingStations.find(
+          (s) => s.id === selectedStation.id
+        )
+      : null
+  );
 
+  const { user } = useUser();
+  
   const handleNavigation = () => {
     SheetManager.hide("stationDetails");
     navigation.navigate("Details", { selectedStation });
   };
-
+  
   const handleFavourite = () => {
-    selectedStation.isFavourite = selectedStation?.isFavourite ? false : true;
-  }
+    dispatch(
+      handleFavouriteStation({
+        isFavourite: station.isFavourite,
+        userID: user.id,
+        stationID: station.id,
+      })
+    );
+  };
 
   return (
     <ActionSheet id="stationDetails">
@@ -46,11 +67,21 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
         <View style={styles.actionSheet}>
           <View style={styles.header}>
             <Text style={styles.stationTitle}>{selectedStation.name}</Text>
-            <TouchableOpacity style={styles.favouriteButton} onPress={() => handleFavourite()}>
-              <Ionicons name={selectedStation.isFavourite ? "heart-dislike" : "heart"} size={20} color={Colors.WHITE} />
+            <TouchableOpacity
+              style={styles.favouriteButton}
+              onPress={() => handleFavourite()}
+            >
+              <Ionicons
+                name={station.isFavourite ? "heart-dislike" : "heart"}
+                size={20}
+                color={Colors.WHITE}
+              />
             </TouchableOpacity>
           </View>
           <View style={styles.actionSheetContent}>
+            <Text style={styles.stationDistance}>
+              Address: {selectedStation.address}
+            </Text>
             <Text style={styles.stationDistance}>
               Distance: {Number(selectedStation.distance).toFixed(2)} km
             </Text>
