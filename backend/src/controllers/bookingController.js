@@ -1,91 +1,123 @@
 const Booking = require("../models/booking");
 const ChargingStation = require("../models/chargingStation");
+const smartcar = require("smartcar");
 
 // tao booking
 module.exports.createBooking = async (req, res) => {
   try {
     const { userId, stationId, startTime, endTime, paymentMethod } = req.body;
+    const accessToken = req.headers["smartcar-token"];
 
-    // 1. Chuyển đổi sang giờ VN (UTC+7) để so sánh
-    const getVnTime = (date) => {
-      const d = new Date(date);
-      return new Date(d.getTime() + 7 * 60 * 60 * 1000); // +7 giờ
-    };
+    // 1. Kiểm tra access token
+    if (!accessToken) {
+      return res
+        .status(401)
+        .json({ message: "Thiếu access token của Smartcar" });
+    }
 
-    console.log(startTime);
-    console.log(endTime);
+    // 2. Lấy thông tin xe từ Smartcar API
+    const vehicles = await smartcar.getVehicles(accessToken);
+    if (!vehicles.vehicles?.length) {
+      return res.status(404).json({ message: "Không tìm thấy xe" });
+    }
 
+    const vehicle = new smartcar.Vehicle(vehicles.vehicles[0], accessToken);
+    const [battery, charge] = await Promise.all([
+      vehicle.battery().catch(() => null),
+      vehicle.charge().catch(() => null),
+    ]);
+
+    // 3. Validate dữ liệu pin xe
+    if (!battery) {
+      return res
+        .status(400)
+        .json({ message: "Không thể lấy thông tin pin xe" });
+    }
+
+    const batteryCapacity = 100; // Giả định dung lượng pin (có thể lấy từ vehicle.attributes() nếu có)
+    const currentBatteryPercent = battery.percentRemaining * 100;
+
+    // 4. Validate thời gian (UTC+7)
+    const getVnTime = (date) => new Date(date.getTime() + 7 * 60 * 60 * 1000);
     const currentVnTime = getVnTime(new Date());
     const startVnTime = getVnTime(new Date(startTime));
     const endVnTime = getVnTime(new Date(endTime));
 
-    console.log("Current VN Time:", currentVnTime.toISOString());
-    console.log("Start VN Time:", startVnTime.toISOString());
-    console.log("End VN Time:", endVnTime.toISOString());
-
-    // 2. Validate thời gian (so sánh bằng timestamp)
     if (startVnTime.getTime() < currentVnTime.getTime()) {
       return res
         .status(400)
-        .json({ message: "Thời gian bắt đầu không được trong quá khứ" });
+        .json({ message: "Thời gian bắt đầu không hợp lệ" });
     }
 
-    if (endVnTime.getTime() <= startVnTime.getTime()) {
-      return res
-        .status(400)
-        .json({ message: "Thời gian kết thúc phải sau thời gian bắt đầu" });
-    }
-
-    // 3. Kiểm tra trạm
+    // 5. Kiểm tra trạm sạc
     const station = await ChargingStation.findById(stationId);
     if (!station) {
       return res.status(404).json({ message: "Trạm sạc không tồn tại" });
     }
 
-    // 4. Check overlapping (chuyển đổi điều kiện sang VN time)
-    const overlappingBookings = await Booking.find({
-      stationId,
-      status: { $in: ["confirmed", "pending"] },
-      $or: [
-        {
-          startTime: { $lt: endTime },
-          endTime: { $gt: startTime },
-        },
-      ],
-    });
+    // 6. Tính toán thời gian sạc
+    const calculateChargingTime = () => {
+      const remainingPercent = 100 - currentBatteryPercent;
+      const energyNeeded = (remainingPercent / 100) * batteryCapacity;
+      return energyNeeded / station.chargingPowerPerMinute; // phút
+    };
 
-    if (overlappingBookings.length >= station.slot) {
+    const chargingTimeMinutes = calculateChargingTime();
+    const bookingDurationHours = (endVnTime - startVnTime) / (1000 * 60 * 60);
+
+    if (bookingDurationHours < chargingTimeMinutes / 60) {
       return res.status(400).json({
-        message: `Trạm đã hết slot từ ${convertToVnTime(
-          startTime
-        )} đến ${convertToVnTime(endTime)}`,
+        message: `Thời gian booking không đủ. Cần ${Math.ceil(
+          chargingTimeMinutes / 60
+        )} giờ để sạc đầy`,
       });
     }
 
-    // 5. Tính toán giá
-    const durationHours = (endVnTime - startVnTime) / (1000 * 60 * 60);
-    const totalCost = station.baseFee * durationHours;
+    // 7. Kiểm tra slot trống (giữ nguyên logic cũ)
+    const overlappingBookings = await Booking.find({
+      stationId,
+      status: { $in: ["confirmed", "pending"] },
+      $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
+    });
 
-    // 6. Tạo booking (lưu thời gian dạng UTC trong DB)
+    if (overlappingBookings.length >= station.slot) {
+      return res.status(400).json({ message: "Trạm đã hết chỗ" });
+    }
+
+    // 8. Tạo booking
     const booking = new Booking({
       userId,
       stationId,
-      startTime: new Date(startTime), // Lưu nguyên bản (đã validate ISO 8601)
+      startTime: new Date(startTime),
       endTime: new Date(endTime),
-      totalCost,
+      totalCost: station.baseFee * bookingDurationHours,
       paymentMethod,
       status: "confirmed",
+      vehicleInfo: {
+        // Lưu thêm thông tin xe
+        vin: vehicles.vehicles[0],
+        battery: {
+          capacity: batteryCapacity,
+          currentPercent: currentBatteryPercent,
+        },
+      },
     });
 
     await booking.save();
-    station.usedSlot = overlappingBookings.length + 1;
-    await station.save();
 
-    return res.status(201).json({
+    // 9. Trả về response
+    res.status(201).json({
       bookingId: booking._id,
       status: booking.status,
-      totalCost,
+      totalCost: booking.totalCost,
       stationName: station.name,
+      chargingInfo: {
+        batteryCapacity,
+        currentBatteryPercent,
+        targetPercent: 100,
+        requiredChargingTime: chargingTimeMinutes,
+        chargingRate: `${station.chargingPowerPerMinute * 60} kWh/h`, // Hiển thị theo giờ
+      },
       timeInfo: {
         startTime: startVnTime.toISOString(),
         endTime: endVnTime.toISOString(),
@@ -93,8 +125,8 @@ module.exports.createBooking = async (req, res) => {
     });
   } catch (error) {
     console.error("[Booking Error]", error);
-    return res.status(500).json({
-      message: "Lỗi hệ thống khi tạo booking",
+    res.status(500).json({
+      message: "Lỗi hệ thống",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
