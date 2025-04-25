@@ -2,6 +2,7 @@ const ChargingStation = require("../models/chargingStation");
 const haversine = require("../utils/distance");
 const smartcar = require("smartcar");
 const Comment = require("../models/comment");
+const User = require("../models/users");
 
 // Hàm lấy vị trí hiện tại (dùng request hoặc fallback về xe)
 const getCurrentLocation = async (req, vehicle) => {
@@ -58,7 +59,10 @@ module.exports.getChargingStations = async (req, res) => {
 
     // Lấy danh sách trạm sạc từ DB
     const stations = await ChargingStation.find();
-    const user = req.user;
+    const { userID } = req.params;
+    console.log(userID);
+    const {favourites} = await User.findById(userID) || {};
+    console.log(favourites);
 
     // Lọc các trạm sạc trong phạm vi di chuyển
     const stationsWithDistance = stations
@@ -71,10 +75,10 @@ module.exports.getChargingStations = async (req, res) => {
         );
 
         // Tính remainingSlots
-        const remainingSlots = Math.max(0, station.slot - station.usedSlot);
+        const availableSlots = Math.max(0, station.slot - station.usedSlot);
 
         // Cập nhật status dựa trên remainingSlots
-        const status = remainingSlots > 0 ? "available" : "unavailable";
+        const status = availableSlots > 0 ? "available" : "unavailable";
 
         return {
           id: station._id,
@@ -84,7 +88,8 @@ module.exports.getChargingStations = async (req, res) => {
           address: station.address,
           status: status, // Thay status bằng 'available' hoặc 'unavailable'
           distance: distance.toFixed(2),
-          isFavourite: user ? user.favourites.includes(station._id) : false,
+          isFavourite: favourites?.includes(station._id),
+          availableSlots: availableSlots,
           reachable: distance <= maxRange,
           fee: station.fee,
         };
@@ -161,7 +166,7 @@ module.exports.fullinfo = async (req, res) => {
       },
       comments: comments.map((comment) => ({
         ...comment,
-        createdAt: new Date(comment.createdAt).toLocaleString(),
+        createdAt: new Date(comment.createdAt).toLocaleDateString("en-GB"),
       })),
       availableSlots: station.slot - station.usedSlot, // Thêm thông tin slot còn trống
     };

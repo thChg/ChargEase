@@ -82,7 +82,7 @@ const SearchList: React.FC<SearchListProps> = ({
               <View style={styles.resultItem}>
                 <Text style={styles.resultText}>{item.name}</Text>
                 <Text style={styles.resultDistance}>
-                  Distance: {item.distance.toFixed(2)} km
+                  Distance: {Number(item.distance).toFixed(2)} km
                 </Text>
               </View>
             </TouchableWithoutFeedback>

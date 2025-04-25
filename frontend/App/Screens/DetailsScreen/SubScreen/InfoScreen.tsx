@@ -26,8 +26,8 @@ const InfoScreen = ({ selectedStation } : any) => {
           <Ionicons name="cash-outline" size={25} color={Colors.PRIMARY} />
         </View>
         <Text style={styles.text}>
-          {selectedStation.parkingCost
-            ? `$${selectedStation.parkingCost} / hour`
+          {selectedStation.baseFee
+            ? `${selectedStation.baseFee} VNĐ/hour`
             : "Free parking"}
         </Text>
       </View>
@@ -36,7 +36,7 @@ const InfoScreen = ({ selectedStation } : any) => {
           <Text style={styles.sectionTitle}>Opening Hours</Text>
           <Ionicons name="time-sharp" size={25} color={Colors.PRIMARY} />
         </View>
-        <Text style={styles.text}>{selectedStation.operatingHours}</Text>
+        <Text style={styles.text}>{selectedStation.workingHours}</Text>
       </View>
       <View style={styles.section}>
         <View style={styles.titleRow}>

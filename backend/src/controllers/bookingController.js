@@ -4,7 +4,7 @@ const ChargingStation = require("../models/chargingStation");
 // tao booking
 module.exports.createBooking = async (req, res) => {
   try {
-    const { userId, stationId, startTime, endTime, paymentMethod } = req.body;
+    const { userId, stationId, startTime, endTime } = req.body;
 
     // 1. Chuyển đổi sang giờ VN (UTC+7) để so sánh
     const getVnTime = (date) => {
@@ -73,7 +73,6 @@ module.exports.createBooking = async (req, res) => {
       startTime: new Date(startTime), // Lưu nguyên bản (đã validate ISO 8601)
       endTime: new Date(endTime),
       totalCost,
-      paymentMethod,
       status: "confirmed",
     });
 
@@ -103,17 +102,17 @@ module.exports.createBooking = async (req, res) => {
 // lay lish su booking
 module.exports.getBookingHistory = async (req, res) => {
   try {
-    const { userId, status } = req.query;
+    const { userId } = req.query;
+    
     const filter = { userId };
-
-    // Nếu status không phải là "all", thêm điều kiện vào filter
-    if (status && status !== "all") {
-      filter.status = status;
-    }
 
     const bookings = await Booking.find(filter)
       .populate("stationId", "name address") // Chỉ lấy name và address của trạm
       .sort({ createdAt: -1 });
+      
+    if (bookings.length === 0) {
+      return res.json({bookings: []});
+    }
 
     res.status(200).json({
       bookings: bookings.map((booking) => ({
@@ -124,7 +123,6 @@ module.exports.getBookingHistory = async (req, res) => {
         endTime: booking.endTime,
         status: booking.status,
         totalCost: booking.totalCost,
-        energyConsumed: booking.energyConsumed,
       })),
       total: bookings.length,
     });

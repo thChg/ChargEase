@@ -2,8 +2,7 @@ const mongoose = require("mongoose");
 
 const BookingSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
+    type: String,
     required: true,
   },
   stationId: {
@@ -26,15 +25,6 @@ const BookingSchema = new mongoose.Schema({
   },
   totalCost: {
     type: Number,
-    required: true,
-  },
-  energyConsumed: {
-    type: Number,
-    default: 0,
-  },
-  paymentMethod: {
-    type: String,
-    enum: ["momo", "credit_card", "cash"],
     required: true,
   },
   createdAt: {

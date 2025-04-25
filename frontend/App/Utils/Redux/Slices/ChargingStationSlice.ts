@@ -1,8 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import api from "../../axiosInstance";
 
-const BACKEND_URL = "http://192.168.1.8:8080";
-
 interface ChargingStation {
   id: string;
   distance: number;
@@ -31,13 +29,12 @@ const initialState: chargingStationsState = {
 export const fetchChargingStations = createAsyncThunk(
   "/charger/findCharging",
   async (
-    { longitude, latitude }: { longitude: number; latitude: number },
+    { longitude, latitude, userID }: { longitude: number; latitude: number, userID: string },
     { rejectWithValue }
   ) => {
     try {
-      console.log(`${BACKEND_URL}/charger/findCharging`);
       const response = await api.get(
-        `/charger/findCharging?longitude=${longitude}&latitude=${latitude}`
+        `/charger/findCharging/${userID}?longitude=${longitude}&latitude=${latitude}`
       );
       return response.data;
     } catch (error: any) {
@@ -55,7 +52,11 @@ export const handleFavouriteStation = createAsyncThunk(
       isFavourite,
       userID,
       stationID,
-    }: { isFavourite: boolean | null; userID: string | null; stationID: string | null},
+    }: {
+      isFavourite: boolean | null;
+      userID: string | null;
+      stationID: string | null;
+    },
     { rejectWithValue }
   ) => {
     try {
@@ -70,6 +71,37 @@ export const handleFavouriteStation = createAsyncThunk(
         });
       }
       return { stationID: stationID, isFavourite: !isFavourite };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch charging stations."
+      );
+    }
+  }
+);
+
+export const handleCommentStation = createAsyncThunk(
+  "/user/comment",
+  async (
+    {
+      comment,
+      star,
+      username,
+      stationID,
+    }: {
+      comment: string;
+      star: number;
+      username: string | null;
+      stationID: string | null;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post(`/comment/${stationID}`, {
+        comment,
+        star,
+        username,
+      });
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch charging stations."
@@ -106,6 +138,18 @@ const ChargingStationSlice = createSlice({
             return {
               ...station,
               isFavourite: action.payload.isFavourite,
+            };
+          }
+          return station;
+        });
+      })
+      .addCase(handleCommentStation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.chargingStations = state.chargingStations.map((station) => {
+          if (station.id === action.payload.stationID) {
+            return {
+              ...station,
+              comments: [...station.comments, action.payload.comment],
             };
           }
           return station;

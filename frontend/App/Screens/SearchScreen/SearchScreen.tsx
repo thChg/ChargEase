@@ -12,7 +12,6 @@ import { RootState } from "../../Utils/Redux/Store";
 import { useEffect, useState } from "react";
 import Colors from "../../Utils/Colors";
 import StationCard from "./StationCard";
-import stations from "../../Utils/dummyData";
 import { Ionicons } from "@expo/vector-icons";
 import FilterModal from "./FilterModal";
 
@@ -30,9 +29,9 @@ interface ChargingStation {
 }
 
 const SearchScreen = () => {
-  //   const stations = useSelector(
-  //     (state: RootState) => state.ChargingStations.chargingStations
-  //   );
+    const stations = useSelector(
+      (state: RootState) => state.ChargingStations.chargingStations
+    );
   const reachableStations = stations.filter((station) => station.reachable);
   const [reachableResult, setReachableResult] =
     useState<ChargingStation[]>(reachableStations);
@@ -126,7 +125,7 @@ const SearchScreen = () => {
       <FilterModal
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
-        filteredStations={filteredStations}
+        allStations={stations}
         setFilteredStations={setFilteredStations}
       />
     </SafeAreaView>
