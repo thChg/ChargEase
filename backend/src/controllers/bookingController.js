@@ -42,17 +42,14 @@ module.exports.createBooking = async (req, res) => {
       return res.status(404).json({ message: "Trạm sạc không tồn tại" });
     }
 
-    // 4. Check overlapping (chuyển đổi điều kiện sang VN time)
-    const overlappingBookings = await Booking.find({
-      stationId,
-      status: { $in: ["confirmed", "pending"] },
-      $or: [
-        {
-          startTime: { $lt: endTime },
-          endTime: { $gt: startTime },
-        },
-      ],
-    });
+    // 4. Check overlapping slots (in UTC)
+    const overlappingBookings =
+      (await Booking.find({
+        stationId,
+        status: { $in: ["confirmed", "pending"] },
+        startTime: { $lt: new Date(endTime) },
+        endTime: { $gt: new Date(startTime) },
+      })) + station.usedSlot;
 
     if (overlappingBookings.length >= station.slot) {
       return res.status(400).json({
@@ -77,8 +74,6 @@ module.exports.createBooking = async (req, res) => {
     });
 
     await booking.save();
-    station.usedSlot = overlappingBookings.length + 1;
-    await station.save();
 
     return res.status(201).json({
       bookingId: booking._id,
@@ -103,15 +98,15 @@ module.exports.createBooking = async (req, res) => {
 module.exports.getBookingHistory = async (req, res) => {
   try {
     const { userId } = req.query;
-    
+
     const filter = { userId };
 
     const bookings = await Booking.find(filter)
       .populate("stationId", "name address") // Chỉ lấy name và address của trạm
       .sort({ createdAt: -1 });
-      
+
     if (bookings.length === 0) {
-      return res.json({bookings: []});
+      return res.json({ bookings: [] });
     }
 
     res.status(200).json({
@@ -138,7 +133,6 @@ module.exports.cancelBooking = async (req, res) => {
     const bookingId = req.params.id;
     const { userId } = req.body;
     const currentTime = new Date(); // Thời gian hiện tại
-
     // Find booking
     const booking = await Booking.findById(bookingId);
     if (!booking) {
@@ -167,19 +161,11 @@ module.exports.cancelBooking = async (req, res) => {
     }
 
     // cập nhật trạng thái booking
-    booking.status = "cancelled";
-    await booking.save();
-
-    // giảm 1 usedSLot
-    const station = await ChargingStation.findById(booking.stationId);
-    if (station) {
-      station.usedSlot = Math.max(0, station.usedSlot - 1);
-      await station.save();
-    }
+    await Booking.findByIdAndDelete(bookingId);
 
     res.json({
       message: "Booking cancelled successfully",
-      booking,
+      bookingId,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

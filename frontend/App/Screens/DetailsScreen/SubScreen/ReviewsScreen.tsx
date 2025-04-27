@@ -43,8 +43,7 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ selectedStation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [comments, setComments] = useState(selectedStation.comments || []);
   const [rating, setRating] = useState(selectedStation.rating);
-  console.log(selectedStation.rating.breakdown);
-  console.log(comments);
+
   const [modalVisible, setModalVisible] = useState(false);
 
   const fetchStationFullInfo = async () => {

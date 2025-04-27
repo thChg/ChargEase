@@ -3,6 +3,7 @@ const haversine = require("../utils/distance");
 const smartcar = require("smartcar");
 const Comment = require("../models/comment");
 const User = require("../models/users");
+const booking = require("../models/booking");
 
 // Hàm lấy vị trí hiện tại (dùng request hoặc fallback về xe)
 const getCurrentLocation = async (req, vehicle) => {
@@ -60,13 +61,14 @@ module.exports.getChargingStations = async (req, res) => {
     // Lấy danh sách trạm sạc từ DB
     const stations = await ChargingStation.find();
     const { userID } = req.params;
-    console.log(userID);
-    const {favourites} = await User.findById(userID) || {};
-    console.log(favourites);
+
+    const { favourites } = (await User.findById(userID)) || {};
 
     // Lọc các trạm sạc trong phạm vi di chuyển
-    const stationsWithDistance = stations
-      .map((station) => {
+    const now = new Date();
+
+    const stationsWithDistance = await Promise.all(
+      stations.map(async (station) => {
         const distance = haversine(
           latitude,
           longitude,
@@ -74,10 +76,15 @@ module.exports.getChargingStations = async (req, res) => {
           station.longitude
         );
 
-        // Tính remainingSlots
-        const availableSlots = Math.max(0, station.slot - station.usedSlot);
+        // Count current active bookings
+        const activeBookingsCount = await booking.countDocuments({
+          stationId: station._id,
+          startTime: { $lte: now },
+          endTime: { $gte: now },
+          status: { $in: ["pending", "confirmed"] },
+        });
 
-        // Cập nhật status dựa trên remainingSlots
+        const availableSlots = Math.max(0, station.slot - activeBookingsCount - station.usedSlot);
         const status = availableSlots > 0 ? "available" : "unavailable";
 
         return {
@@ -86,16 +93,15 @@ module.exports.getChargingStations = async (req, res) => {
           longitude: station.longitude,
           latitude: station.latitude,
           address: station.address,
-          status: status, // Thay status bằng 'available' hoặc 'unavailable'
+          status,
           distance: distance.toFixed(2),
           isFavourite: favourites?.includes(station._id),
-          availableSlots: availableSlots,
+          availableSlots,
           reachable: distance <= maxRange,
           fee: station.fee,
         };
       })
-      .sort((a, b) => a.distance - b.distance);
-
+    );
     res.json({
       stations: stationsWithDistance,
     });

@@ -14,17 +14,21 @@ import StarRating from "../../Components/StarRating";
 import api from "../../Utils/axiosInstance";
 import BookingModal from "../../Components/BookingModal";
 import { useUser } from "@clerk/clerk-expo";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../Utils/Redux/Store";
+import { fetchBookingHistory } from "../../Utils/Redux/Slices/BookingSlice";
 
 export default function DetailsScreen({ route }: any) {
   const { selectedStation } = route.params;
   const userId = useUser().user?.id;
+  const dispatch = useDispatch<AppDispatch>();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState();
   useEffect(() => {
     const fetchStationFullInfo = async () => {
       const response = await api.get(`/charger/fullinfo/${selectedStation.id}`);
-      setData(response.data);
-      console.log(response.data);
+      setData(response.data);;
     };
     fetchStationFullInfo();
   }, [selectedStation]);
@@ -45,7 +49,7 @@ export default function DetailsScreen({ route }: any) {
         startTime: start,
         endTime: end,
       });
-      
+      await dispatch(fetchBookingHistory({ userID: userId }));
     } catch (error) {
       console.error("Error booking the slot:", error);
     }

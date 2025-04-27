@@ -164,10 +164,8 @@ const styles = StyleSheet.create({
   },
   locationContainer: {
     flexDirection: "row",
-    alignItems: "center",
     gap: 5,
     marginTop: 10,
-    flexWrap: "wrap",
     paddingBottom: 10,
   },
   location: {

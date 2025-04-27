@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Appearance } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import moment from "moment";
 import Colors from "../Utils/Colors";
 import { Ionicons } from "@expo/vector-icons";
-
 interface BookingModalProps {
   modalVisible: boolean;
   setModalVisible: (visible: boolean) => void;
@@ -22,6 +21,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [isPickerVisible, setPickerVisible] = useState(false);
   const [pickerMode, setPickerMode] = useState<"start" | "end">("start");
+
+  const colorTheme = Appearance.getColorScheme();
+  const showPickerColor = colorTheme === "dark" ? "dark" : "light";
 
   const showPicker = (mode: "start" | "end") => {
     setPickerMode(mode);
@@ -110,6 +112,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           onConfirm={handleConfirm}
           onCancel={() => setPickerVisible(false)}
           minimumDate={new Date()}
+          themeVariant={showPickerColor}
         />
       </View>
     </Modal>

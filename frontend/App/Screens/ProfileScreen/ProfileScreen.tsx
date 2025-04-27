@@ -13,9 +13,14 @@ import moment from "moment";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../Utils/Redux/Store";
 import SplashScreenComponent from "../SplashScreen/SplashScreen";
-import { useEffect } from "react";
-import { fetchBookingHistory } from "../../Utils/Redux/Slices/BookingSlice";
+import { useEffect, useState } from "react";
+import {
+  deleteBooking,
+  fetchBookingHistory,
+} from "../../Utils/Redux/Slices/BookingSlice";
 import { Ionicons } from "@expo/vector-icons";
+import BookingCard from "./BookingCard";
+import BookingStatusToggle from "./BookingStatusToggle";
 
 export default function ProfileScreen() {
   const { user } = useUser();
@@ -23,25 +28,33 @@ export default function ProfileScreen() {
   const { vehicleInfo, loading } = useSelector(
     (state: RootState) => state.VehicleInformation
   );
-  const { bookings } = useSelector(
-    (state: RootState) => state.Booking
-  );
-  
+  const { bookings } = useSelector((state: RootState) => state.Booking);
+
   useEffect(() => {
     dispatch(fetchBookingHistory({ userID: user?.id }));
-  }, [dispatch])
+  }, [dispatch]);
 
-  const canDelete = (booking) => {
-    const isFuture = new Date(booking.startTime) > new Date();
-    return ["pending", "confirmed"].includes(booking.status) && isFuture;
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredBookings =
+    statusFilter === "all"
+      ? bookings
+      : bookings.filter((b) => b.status === statusFilter);
+  console.log(filteredBookings)
+  const handleConfirmDelete = (bookingId) => {
+    dispatch(deleteBooking({ bookingId: bookingId, userId: user?.id })).then(
+      () => {
+        // Refetch the booking history after delete
+        dispatch(fetchBookingHistory({ userID: user?.id }));
+      }
+    );
   };
 
-  if (loading) return <SplashScreenComponent />;
+  if (loading || !user || !vehicleInfo || !bookings)
+    return <SplashScreenComponent />;
 
   return (
     <ScrollView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.PRIMARY} />
-
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Welcome back,</Text>
         <Text style={styles.profileName}>{user?.fullName}</Text>
@@ -50,7 +63,7 @@ export default function ProfileScreen() {
       <View style={styles.mainContent}>
         {/* User Info */}
         <View style={styles.section}>
-          <Text style={styles.cardTitle}>User Information</Text>
+          <Text style={styles.titleText}>User Information</Text>
           <Text style={styles.text}>
             Name: {user?.firstName} {user?.lastName}
           </Text>
@@ -63,58 +76,37 @@ export default function ProfileScreen() {
 
         {/* Car Info */}
         <View style={styles.section}>
-  <Text style={styles.cardTitle}>Car Information</Text>
-  <View style={styles.carInfoRow}>
-    <Text style={styles.carMakeModel}>
-      {vehicleInfo.make} {vehicleInfo.model}
-    </Text>
-    <View style={styles.batteryContainer}>
-      <Ionicons name="battery-half" size={18} color="#555" />
-      <Text style={styles.batteryText}> {vehicleInfo.battery}%</Text>
-    </View>
-  </View>
-  <Text style={styles.text}>Year: {vehicleInfo.year}</Text>
-  <Text style={styles.text}>Range: {vehicleInfo.range} km</Text>
-</View>
-
+          <Text style={styles.titleText}>Car Information</Text>
+          <View style={styles.carInfoRow}>
+            <Text style={styles.carMakeModel}>
+              {vehicleInfo.make} {vehicleInfo.model}
+            </Text>
+            <View style={styles.batteryContainer}>
+              <Ionicons name="battery-half" size={18} color="#555" />
+              <Text style={styles.batteryText}> {vehicleInfo.battery}%</Text>
+            </View>
+          </View>
+          <Text style={styles.text}>Year: {vehicleInfo.year}</Text>
+          <Text style={styles.text}>Range: {vehicleInfo.range} km</Text>
+        </View>
 
         <View style={styles.separator} />
 
-        {/* Booking History (uncomment and plug in booking data when ready) */}
+        {/* Booking History */}
         <View style={styles.section}>
-          <Text style={styles.cardTitle}>Booking History</Text>
-          {bookings?.bookings?.map((booking) => (
-            <View key={booking.bookingId} style={styles.bookingCard}>
-            <Text style={styles.textBold}>Station: {booking.stationName}</Text>
-            <Text style={styles.text}>Address: {booking.stationAddress}</Text>
-            <Text style={styles.text}>
-              From: {moment(booking.startTime).format("MMM D, YYYY h:mm A")}
-            </Text>
-            <Text style={styles.text}>
-              To: {moment(booking.endTime).format("MMM D, YYYY h:mm A")}
-            </Text>
-            <Text style={styles.text}>Status: {booking.status}</Text>
-            <Text style={styles.text}>Total Cost: {booking.totalCost.toFixed(2)} VNĐ</Text>
-            <Text style={styles.text}>Energy: {booking.energyConsumed} kWh</Text>
-          
-            {canDelete(booking) && (
-              <Pressable
-                onPress={() => {
-                  Alert.alert(
-                    "Cancel Booking",
-                    "Are you sure you want to delete this booking?",
-                    [
-                      { text: "No" },
-                      // { text: "Yes", onPress: () => onDeleteBooking(booking.bookingId) }
-                    ]
-                  );
-                }}
-                style={styles.deleteButton}
-              >
-                <Text style={styles.deleteText}>Cancel Booking</Text>
-              </Pressable>
-            )}
+          <View style={styles.cardTitle}>
+            <Text style={styles.titleText}>Booking History</Text>
+            <BookingStatusToggle
+              currentStatus={statusFilter}
+              setStatus={setStatusFilter}
+            />
           </View>
+          {filteredBookings.map((booking) => (
+            <BookingCard
+              key={booking.bookingId}
+              booking={booking}
+              onConfirmDelete={handleConfirmDelete}
+            />
           ))}
         </View>
       </View>
@@ -159,6 +151,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
+    display: "flex",
+    justifyContent: "space-between",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  titleText: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
@@ -210,15 +214,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: "#444",
   },
-  bookingCard: {
-    backgroundColor: "#fefefe",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  
 });

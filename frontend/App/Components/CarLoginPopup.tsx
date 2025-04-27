@@ -57,8 +57,6 @@ const CarLoginPopup: React.FC<CarLoginPopupProps> = ({
 
   const handleLogin = async () => {
     try {
-      const token = await AsyncStorage.getItem("clerkToken");
-      console.log(token)
       const response = await api.get(`/smartcar/login`);
 
       if (!response.data.url) {
