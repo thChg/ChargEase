@@ -9,7 +9,6 @@ import {
     StyleSheet,
 } from "react-native";
 import Colors from "../../Utils/Colors"; // Assuming you have this
-import stations from "../../Utils/dummyData";
 
 interface ChargingStation {
   distance: number;
@@ -27,7 +26,7 @@ interface ChargingStation {
 interface FilterModalProps {
   modalVisible: boolean;
   setModalVisible: (modalVisible: boolean) => void;
-  filteredStations: ChargingStation[];
+  allStations: ChargingStation[];
   setFilteredStations: (filteredStations: ChargingStation[]) => void;
 }
 
@@ -37,7 +36,7 @@ const slots = [">=10", ">=5", ">=3", ">=1"];
 const FilterModal: React.FC<FilterModalProps> = ({
   modalVisible,
   setModalVisible,
-  filteredStations,
+  allStations,
   setFilteredStations,
 }) => {
   const [selectedDistance, setSelectedDistance] = useState<string | null>(null);
@@ -53,16 +52,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setAvailable(false);
     setFavourite(false);
 
-    setFilteredStations(stations);
+    setFilteredStations(allStations);
   };
 
   const handleApplyFilter = () => {
-    let filtered = stations;
+    let filtered = allStations;
 
     if (selectedDistance !== null) {
       const maxDistance = Number(selectedDistance.match(/\d+(\.\d+)?/)[0]);
       filtered = filtered.filter(
-        (station) => station.distance <= maxDistance! * 1000
+        (station) => station.distance <= maxDistance
       );
     }
 

@@ -35,7 +35,7 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  
+
   const station = useSelector((state: RootState) =>
     selectedStation
       ? state.ChargingStations.chargingStations.find(
@@ -45,12 +45,12 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
   );
 
   const { user } = useUser();
-  
+
   const handleNavigation = () => {
     SheetManager.hide("stationDetails");
     navigation.navigate("Details", { selectedStation });
   };
-  
+
   const handleFavourite = () => {
     dispatch(
       handleFavouriteStation({
@@ -79,16 +79,38 @@ const InformationSheet: React.FC<InformationSheetProps> = ({
             </TouchableOpacity>
           </View>
           <View style={styles.actionSheetContent}>
-            <Text style={styles.stationDistance}>
-              Address: {selectedStation.address}
-            </Text>
-            <Text style={styles.stationDistance}>
-              Distance: {Number(selectedStation.distance).toFixed(2)} km
-            </Text>
+            <View style={styles.locationContainer}>
+              <Ionicons name="compass-sharp" size={18} color="#555" />
+              <Text style={styles.location}>{selectedStation.address}</Text>
+            </View>
+            <View style={styles.distanceContainer}>
+              <Ionicons name="location-sharp" size={18} color="#555" />
+              <Text style={styles.distance}>{selectedStation.distance} km</Text>
+            </View>
+            <View style={styles.slotInfoContainer}>
+              <Ionicons
+                name="car-sharp"
+                size={18}
+                color={
+                  selectedStation.availableSlots === 0 ? "#c0392b" : "#555"
+                }
+              />
+              <Text
+                style={[
+                  styles.stationAvailaleSlots,
+                  selectedStation.availableSlots === 0 && styles.noSlots,
+                ]}
+              >
+                {selectedStation.availableSlots === 0
+                  ? "No slots available"
+                  : `${selectedStation.availableSlots} slots left`}
+              </Text>
+            </View>
           </View>
           <View style={styles.actionSheetButtons}></View>
           <View style={styles.interactButtons}>
             <TouchableOpacity
+            
               style={styles.directionButton}
               onPress={() => handleNavigation()}
             >
@@ -140,6 +162,47 @@ const styles = StyleSheet.create({
     color: "#333",
     flexWrap: "wrap",
   },
+  locationContainer: {
+    flexDirection: "row",
+    gap: 5,
+    marginTop: 10,
+    paddingBottom: 10,
+  },
+  location: {
+    fontSize: 16,
+    color: "#555",
+    paddingRight: 20, // for spacing
+    flexShrink: 1, // allows text to shrink if needed
+    flexWrap: "wrap",
+  },
+  distanceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingBottom: 10,
+  },
+  distance: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.PRIMARY,
+    paddingLeft: 5,
+  },
+  slotInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingBottom: 10,
+  },
+  stationAvailaleSlots: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.PRIMARY,
+    paddingLeft: 5,
+  },
+
+  noSlots: {
+    color: "#c0392b", // red when full
+  },
   favouriteButton: {
     backgroundColor: Colors.PRIMARY,
     padding: 8,
@@ -174,17 +237,18 @@ const styles = StyleSheet.create({
   directionButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   closeButton: {
     marginTop: 15,
-    backgroundColor: "#ddd",
+    backgroundColor: "#ccc",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
   },
   closeButtonText: {
-    color: "#333",
+    color: "#fff",
+    fontWeight: "600",
     fontSize: 16,
   },
 });

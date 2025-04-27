@@ -89,17 +89,26 @@ exports.getVehicleInfo = async (req, res) => {
         vehicle.charge().catch(() => null),
       ]);
 
+    const pluggedIn = charge ? charge.isPluggedIn : null;
+    const batteryPercent = battery ? battery.percentRemaining * 100 : null;
+
+    let chargeTimeMinutes = null;
+    if (pluggedIn && batteryPercent !== null) {
+      chargeTimeMinutes = 100 - batteryPercent;
+    }
+
     res.json({
       vin: attributes.vin,
       make: attributes.make,
       model: attributes.model,
       year: attributes.year,
       location,
-      battery: battery ? battery.percentRemaining * 100 : null,
+      battery: batteryPercent,
       range: battery ? battery.range : fuel ? fuel.range : null,
       fuel: fuel ? fuel.percentRemaining * 100 : null,
       odometer: odometer ? odometer.distance : null,
-      pluggedIn: charge ? charge.isPluggedIn : null,
+      pluggedIn,
+      chargeTimeMinutes,
     });
   } catch (error) {
     console.error("Error:", error);

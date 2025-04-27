@@ -2,6 +2,8 @@ const ChargingStation = require("../models/chargingStation");
 const haversine = require("../utils/distance");
 const smartcar = require("smartcar");
 const Comment = require("../models/comment");
+const User = require("../models/users");
+const booking = require("../models/booking");
 
 // Hàm lấy vị trí hiện tại (dùng request hoặc fallback về xe)
 const getCurrentLocation = async (req, vehicle) => {
@@ -58,11 +60,15 @@ module.exports.getChargingStations = async (req, res) => {
 
     // Lấy danh sách trạm sạc từ DB
     const stations = await ChargingStation.find();
-    const user = req.user;
+    const { userID } = req.params;
+
+    const { favourites } = (await User.findById(userID)) || {};
 
     // Lọc các trạm sạc trong phạm vi di chuyển
-    const stationsWithDistance = stations
-      .map((station) => {
+    const now = new Date();
+
+    const stationsWithDistance = await Promise.all(
+      stations.map(async (station) => {
         const distance = haversine(
           latitude,
           longitude,
@@ -70,11 +76,16 @@ module.exports.getChargingStations = async (req, res) => {
           station.longitude
         );
 
-        // Tính remainingSlots
-        const remainingSlots = Math.max(0, station.slot - station.usedSlot);
+        // Count current active bookings
+        const activeBookingsCount = await booking.countDocuments({
+          stationId: station._id,
+          startTime: { $lte: now },
+          endTime: { $gte: now },
+          status: { $in: ["pending", "confirmed"] },
+        });
 
-        // Cập nhật status dựa trên remainingSlots
-        const status = remainingSlots > 0 ? "available" : "unavailable";
+        const availableSlots = Math.max(0, station.slot - activeBookingsCount - station.usedSlot);
+        const status = availableSlots > 0 ? "available" : "unavailable";
 
         return {
           id: station._id,
@@ -82,15 +93,15 @@ module.exports.getChargingStations = async (req, res) => {
           longitude: station.longitude,
           latitude: station.latitude,
           address: station.address,
-          status: status, // Thay status bằng 'available' hoặc 'unavailable'
+          status,
           distance: distance.toFixed(2),
-          isFavourite: user ? user.favourites.includes(station._id) : false,
+          isFavourite: favourites?.includes(station._id),
+          availableSlots,
           reachable: distance <= maxRange,
           fee: station.fee,
         };
       })
-      .sort((a, b) => a.distance - b.distance);
-
+    );
     res.json({
       stations: stationsWithDistance,
     });
@@ -161,7 +172,7 @@ module.exports.fullinfo = async (req, res) => {
       },
       comments: comments.map((comment) => ({
         ...comment,
-        createdAt: new Date(comment.createdAt).toLocaleString(),
+        createdAt: new Date(comment.createdAt).toLocaleDateString("en-GB"),
       })),
       availableSlots: station.slot - station.usedSlot, // Thêm thông tin slot còn trống
     };

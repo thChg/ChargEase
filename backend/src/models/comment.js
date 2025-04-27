@@ -6,9 +6,8 @@ const CommentSchema = new mongoose.Schema({
     ref: "chargingstations",
     required: true,
   }, // Liên kết với trạm sạc
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
+  username: {
+    type: String,
     required: true,
   },
   comment: { type: String, required: true },

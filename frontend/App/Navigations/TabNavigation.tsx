@@ -49,7 +49,7 @@ export default function TabNagivation() {
         tabBarActiveTintColor:Colors.PRIMARY,
         tabBarIcon:({color,size})=>(
             <FontAwesome name="user-circle" size={size} color={color} />
-        )
+        ),
     }}
     />
 

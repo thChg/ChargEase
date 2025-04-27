@@ -3,11 +3,10 @@ const mongoose = require("mongoose");
 const BookingSchema = new mongoose.Schema({
   userId: {
     type: String,
-    ref: "users",
     required: true,
   },
   stationId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "chargingstations",
     required: true,
   },
@@ -26,15 +25,6 @@ const BookingSchema = new mongoose.Schema({
   },
   totalCost: {
     type: Number,
-    required: true,
-  },
-  energyConsumed: {
-    type: Number,
-    default: 0,
-  },
-  paymentMethod: {
-    type: String,
-    enum: ["momo", "credit_card", "cash"],
     required: true,
   },
   createdAt: {

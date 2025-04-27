@@ -6,10 +6,10 @@ const User = require("../models/users");
 // API thêm bình luận
 module.exports.comment = async (req, res) => {
   try {
-    const { comment, star, userID } = req.body;
+    const { comment, star, username } = req.body;
     const { stationId } = req.params;
 
-    if (!userID) {
+    if (!username) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -36,7 +36,7 @@ module.exports.comment = async (req, res) => {
     // 4. Tạo comment mới
     const newComment = new Comment({
       stationId,
-      userId: userID,
+      username: username,
       comment: comment.trim(), // Loại bỏ khoảng trắng thừa
       star,
     });

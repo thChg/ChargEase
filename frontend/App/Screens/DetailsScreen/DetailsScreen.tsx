@@ -12,19 +12,26 @@ import Colors from "../../Utils/Colors";
 import { useNavigation } from "@react-navigation/native";
 import StarRating from "../../Components/StarRating";
 import api from "../../Utils/axiosInstance";
+import BookingModal from "../../Components/BookingModal";
+import { useUser } from "@clerk/clerk-expo";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../Utils/Redux/Store";
+import { fetchBookingHistory } from "../../Utils/Redux/Slices/BookingSlice";
 
 export default function DetailsScreen({ route }: any) {
   const { selectedStation } = route.params;
+  const userId = useUser().user?.id;
+  const dispatch = useDispatch<AppDispatch>();
+
+  const [modalVisible, setModalVisible] = useState(false);
   const [data, setData] = useState();
   useEffect(() => {
     const fetchStationFullInfo = async () => {
-      const response = await api.get(
-        `/charger/fullinfo/${selectedStation.id}`
-      );
-      setData(response.data);
-    }
+      const response = await api.get(`/charger/fullinfo/${selectedStation.id}`);
+      setData(response.data);;
+    };
     fetchStationFullInfo();
-  }, [selectedStation])
+  }, [selectedStation]);
 
   const navigation = useNavigation<any>();
   const fetchDirection = () => {
@@ -33,48 +40,85 @@ export default function DetailsScreen({ route }: any) {
       params: { selectedStation },
     });
   };
+
+  const handleBooking = async (start: Date, end: Date) => {
+    try {
+      await api.post("/booking", {
+        userId,
+        stationId: data._id,
+        startTime: start,
+        endTime: end,
+      });
+      await dispatch(fetchBookingHistory({ userID: userId }));
+    } catch (error) {
+      console.error("Error booking the slot:", error);
+    }
+  };
+
   return (
-    data &&
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{data.name}</Text>
-        <View style={styles.locationContainer}>
-          <Ionicons name="compass-sharp" size={18} color="#555" />
-          <Text style={styles.location}>
-            {selectedStation.location} {data.address}
-          </Text>
-        </View>
-        <View style={styles.distanceContainer}>
-          <Ionicons name="location-sharp" size={18} color="#555" />
-          <Text style={styles.distance}>{selectedStation.distance} km</Text>
-        </View>
-        <View style={styles.ratingContainer}>
-          <Text style={styles.ratingText}>{data.rating.avarage}</Text>
-          <StarRating
-            rating={selectedStation.rating}
-          />
-          <Text style={styles.ratingCount}>({data.rating.totalReviews})</Text>
-        </View>
-        <View style={styles.interactButtons}>
-          <TouchableOpacity style={styles.directionButton}>
-            <Ionicons name="today-outline" size={18} color={Colors.WHITE} />
-            <Text style={styles.directionButtonText}>Book now</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.directionButton}
-            onPress={fetchDirection}
-          >
+    data && (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{data.name}</Text>
+          <View style={styles.locationContainer}>
+            <Ionicons name="compass-sharp" size={18} color="#555" />
+            <Text style={styles.location}>{data.address}</Text>
+          </View>
+          <View style={styles.distanceContainer}>
+            <Ionicons name="location-sharp" size={18} color="#555" />
+            <Text style={styles.distance}>{selectedStation.distance} km</Text>
+          </View>
+          <View style={styles.slotInfoContainer}>
             <Ionicons
-              name="paper-plane-outline"
-              size={16}
-              color={Colors.WHITE}
+              name="car-sharp"
+              size={18}
+              color={selectedStation.availableSlots === 0 ? "#c0392b" : "#555"}
             />
-            <Text style={styles.directionButtonText}>Get Directions</Text>
-          </TouchableOpacity>
+            <Text
+              style={[
+                styles.stationAvailaleSlots,
+                selectedStation.availableSlots === 0 && styles.noSlots,
+              ]}
+            >
+              {selectedStation.availableSlots === 0
+                ? "No slots available"
+                : `${selectedStation.availableSlots} slots left`}
+            </Text>
+          </View>
+          <View style={styles.ratingContainer}>
+            <Text style={styles.ratingText}>{data.rating.average}</Text>
+            <StarRating rating={data.rating.average} />
+            <Text style={styles.ratingCount}>
+              ({data.rating.totalReviews} reviews)
+            </Text>
+          </View>
+          <View style={styles.interactButtons}>
+            <TouchableOpacity style={styles.directionButton} onPress={() => setModalVisible(true)}>
+              <Ionicons name="today-outline" size={18} color={Colors.WHITE} />
+              <Text style={styles.directionButtonText}>Book now</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.directionButton}
+              onPress={fetchDirection}
+            >
+              <Ionicons
+                name="paper-plane-outline"
+                size={16}
+                color={Colors.WHITE}
+              />
+              <Text style={styles.directionButtonText}>Get Directions</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-      <DetailsTabNavigation selectedStation={data} />
-    </SafeAreaView>
+        <BookingModal
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          selectedStation={data}
+          onConfirmBooking={handleBooking}
+        ></BookingModal>
+        <DetailsTabNavigation selectedStation={data} />
+      </SafeAreaView>
+    )
   );
 }
 
@@ -114,8 +158,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
     paddingRight: 20, // for spacing
-  flexShrink: 1,     // allows text to shrink if needed
-  flexWrap: "wrap",
+    flexShrink: 1, // allows text to shrink if needed
+    flexWrap: "wrap",
+    paddingLeft: 5,
   },
   distanceContainer: {
     flexDirection: "row",
@@ -124,8 +169,18 @@ const styles = StyleSheet.create({
   },
   distance: {
     fontSize: 16,
-    color: "#444",
+    fontWeight: "600",
+    color: Colors.PRIMARY,
+    paddingLeft: 5,
   },
+  availableSlotsContainer: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 8,
+    paddingRight: 30,
+    alignItems: "center",
+  },
+
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -160,5 +215,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  slotInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  stationAvailaleSlots: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.PRIMARY,
+    paddingLeft: 5,
+  },
+
+  noSlots: {
+    color: "#c0392b", // red when full
   },
 });

@@ -51,25 +51,13 @@ interface MapComponentProps {
 const OPENROUTESERVICE_API_KEY =
   "5b3ce3597851110001cf6248ac34d8a92f584c05939953f73989bb8a";
 
-const MapComponent: React.FC<MapComponentProps> = ({userLocation, setUserLocation}) => {
+const MapComponent: React.FC<MapComponentProps> = ({
+  userLocation,
+  setUserLocation,
+}) => {
   const { chargingStations, loading } = useSelector(
     (state: RootState) => state.ChargingStations
   );
-  // const loading = false;
-  // const chargingStations = [
-  //   {
-  //     id: "2",
-  //     latitude: 21.0362,
-  //     longitude: 105.836,
-  //     name: "Tay Ho Charging Station",
-  //     distance: 0,
-  //     address: "address",
-  //     status: "Available",
-  //     isFavourite: true,
-  //     reachable: true,
-  //   },
-  // ];
-  console.log(chargingStations);
 
   const [selectedStation, setSelectedStation] =
     useState<ChargingStation | null>(null);
@@ -234,7 +222,7 @@ const MapComponent: React.FC<MapComponentProps> = ({userLocation, setUserLocatio
   return chargingStations.length === 0 || loading ? (
     <SplashScreenComponent />
   ) : (
-    userLocation && (
+    chargingStations.length !== 0 && userLocation && (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           <MapView
@@ -252,7 +240,13 @@ const MapComponent: React.FC<MapComponentProps> = ({userLocation, setUserLocatio
                     longitude: station.longitude,
                   }}
                   title={station.name}
-                  image={require("../../../assets/images/station-marker.png")}
+                  image={
+                    station.status !== "Unavailable"
+                      ? station.reachable
+                        ? require("../../../assets/images/station-marker.png")
+                        : require("../../../assets/images/unreachable-station-marker.png")
+                      : require("../../../assets/images/unavailable-station-marker.png")
+                  }
                   onPress={() => handleStationSelect(station)}
                 />
               ))}

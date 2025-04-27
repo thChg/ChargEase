@@ -1,11 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
 import ChargingStationReducer from "./Slices/ChargingStationSlice";
 import FetchDirectionReducer from "./Slices/FetchDirectionSlice"
+import VehicleInformationReducer from "./Slices/VehicleInformationSlice";
+import BookingReducer from "./Slices/BookingSlice";
 
 export const store = configureStore({
   reducer: {
     ChargingStations: ChargingStationReducer,
-    FetchDirection: FetchDirectionReducer,    
+    FetchDirection: FetchDirectionReducer, 
+    VehicleInformation: VehicleInformationReducer,   
+    Booking: BookingReducer,
   },
 });
 
