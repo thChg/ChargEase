@@ -3,11 +3,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Pressable,
-  Alert,
-  StatusBar,
+  TouchableOpacity,
 } from "react-native";
-import { useUser } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import Colors from "../../Utils/Colors";
 import moment from "moment";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,6 +22,7 @@ import BookingStatusToggle from "./BookingStatusToggle";
 
 export default function ProfileScreen() {
   const { user } = useUser();
+  const { signOut } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const { vehicleInfo, loading } = useSelector(
     (state: RootState) => state.VehicleInformation
@@ -40,7 +39,7 @@ export default function ProfileScreen() {
     statusFilter === "all"
       ? bookings
       : bookings.filter((b) => b.status === statusFilter);
-  console.log(filteredBookings)
+  
   const handleConfirmDelete = (bookingId) => {
     dispatch(deleteBooking({ bookingId: bookingId, userId: user?.id })).then(
       () => {
@@ -56,7 +55,22 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome back,</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 20,
+          }}
+        >
+          <Text style={styles.welcomeText}>Welcome back,</Text>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => signOut()}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.profileName}>{user?.fullName}</Text>
       </View>
 
@@ -88,6 +102,10 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.text}>Year: {vehicleInfo.year}</Text>
           <Text style={styles.text}>Range: {vehicleInfo.range} km</Text>
+          <Text style={styles.text}>
+            Status: {vehicleInfo.pluggedIn ? "Charging" : "Idle"}
+          </Text>
+          {vehicleInfo.pluggedIn && <Text style={styles.textBold}>Time until fully charged: {vehicleInfo.chargeTimeMinutes}</Text>}
         </View>
 
         <View style={styles.separator} />
@@ -136,6 +154,17 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     color: Colors.WHITE,
+  },
+  logoutButton: {
+    backgroundColor: "#ff4d4f",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   mainContent: {
     backgroundColor: "#fff",

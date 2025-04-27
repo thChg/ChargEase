@@ -69,8 +69,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const [isTraveling, setIsTraveling] = useState(false);
 
   const route = useRoute<HomeScreenProps["route"]>();
-  const favouriteSelectedStation = route.params?.selectedStation;
-
+  const [favouriteSelectedStation, setFavouriteSelectedStation] = useState(route.params?.selectedStation);
   useEffect(() => {
     if (favouriteSelectedStation && userLocation) {
       fetchDirections(favouriteSelectedStation);
@@ -168,6 +167,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   };
 
   const fetchDirections = async (destination: ChargingStation) => {
+    console.log("fetching directions");
+    console.log(destination)
     const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${OPENROUTESERVICE_API_KEY}&start=${userLocation.longitude},${userLocation.latitude}&end=${destination.longitude},${destination.latitude}`;
     try {
       const response = await axios.get(url);
@@ -273,6 +274,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 setIsTraveling(false);
                 setRouteCoords([]);
                 setSelectedStation(null);
+                setFavouriteSelectedStation(null);
               }}
               style={styles.exitButton}
             >

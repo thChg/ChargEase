@@ -61,31 +61,6 @@ const LoginScreen = () => {
         <Ionicons name="logo-apple" size={30} color="black" />
         <Text style={styles.buttonText}>Continue with Apple</Text>
       </TouchableOpacity>
-
-      <View style={styles.dividerContainer}>
-        <View style={styles.divider} />
-        <Text style={styles.orText}>or</Text>
-        <View style={styles.divider} />
-      </View>
-
-      <TouchableOpacity
-        style={styles.phoneButton}
-      // onPress={() => navigation.navigate('PhoneLogin')}
-      >
-        <Text style={styles.phoneButtonText}>Sign in with Phone Number</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.signupButton}>
-        <Text style={styles.signupText}>
-          Don't have an account?{' '}
-          <Text
-            style={styles.signupLink}
-            onPress={() => navigation.navigate('SignUp')}
-          >
-            Sign up
-          </Text>
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -93,10 +68,11 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    // justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
     backgroundColor: '#fff',
+    marginTop: 50,
   },
   logo: {
     width: 500,
@@ -114,6 +90,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
+    color: Colors.PRIMARY
   },
   button: {
     flexDirection: 'row',
