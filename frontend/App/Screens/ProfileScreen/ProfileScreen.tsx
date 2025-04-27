@@ -105,7 +105,7 @@ export default function ProfileScreen() {
           <Text style={styles.text}>
             Status: {vehicleInfo.pluggedIn ? "Charging" : "Idle"}
           </Text>
-          {vehicleInfo.pluggedIn && <Text style={styles.textBold}>Time until fully charged: {vehicleInfo.chargeTimeMinutes}</Text>}
+          {vehicleInfo.pluggedIn && <Text style={styles.textBold}>Time until fully charged: {vehicleInfo.chargeTimeMinutes} minutes</Text>}
         </View>
 
         <View style={styles.separator} />
