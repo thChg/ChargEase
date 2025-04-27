@@ -15,6 +15,10 @@ const ChargingStationSchema = new mongoose.Schema({
     type: [String], // Mảng các tiện ích
     default: [], // Mặc định là mảng rỗng
   },
+  chargingPowerPerMinute: {
+    type: Number,
+    required: true,
+  },
 });
 
 module.exports = mongoose.model(

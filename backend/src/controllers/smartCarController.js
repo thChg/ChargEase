@@ -10,7 +10,7 @@ const authClient = new smartcar.AuthClient({
 
 // 🔹 Bước 1: Tạo URL đăng nhập
 exports.getAuthUrl = (req, res) => {
-  console.log("authing")
+  console.log("authing");
   const authUrl = authClient.getAuthUrl([
     "read_vehicle_info",
     "read_location",
@@ -25,6 +25,7 @@ exports.getAuthUrl = (req, res) => {
 // 🔹 Bước 2: Xử lý callback, lưu token
 exports.handleAuthCallback = async (req, res, next) => {
   try {
+    console.log("Query params:", req.query);
     if (req.query.error) {
       return next(new Error(req.query.error));
     }
@@ -78,13 +79,23 @@ exports.getVehicleInfo = async (req, res) => {
     // const attributes = await vehicle.attributes();
     // console.log(attributes);
 
-    const [attributes, location, battery, fuel, odometer] = await Promise.all([
-      vehicle.attributes(),
-      vehicle.location(),
-      vehicle.battery().catch(() => null),
-      vehicle.fuel().catch(() => null),
-      vehicle.odometer().catch(() => null),
-    ]);
+    const [attributes, location, battery, fuel, odometer, charge] =
+      await Promise.all([
+        vehicle.attributes(),
+        vehicle.location(),
+        vehicle.battery().catch(() => null),
+        vehicle.fuel().catch(() => null),
+        vehicle.odometer().catch(() => null),
+        vehicle.charge().catch(() => null),
+      ]);
+
+    const pluggedIn = charge ? charge.isPluggedIn : null;
+    const batteryPercent = battery ? battery.percentRemaining * 100 : null;
+
+    let chargeTimeMinutes = null;
+    if (pluggedIn && batteryPercent !== null) {
+      chargeTimeMinutes = 100 - batteryPercent;
+    }
 
     res.json({
       vin: attributes.vin,
@@ -92,10 +103,12 @@ exports.getVehicleInfo = async (req, res) => {
       model: attributes.model,
       year: attributes.year,
       location,
-      battery: battery ? battery.percentRemaining * 100 : null,
+      battery: batteryPercent,
       range: battery ? battery.range : fuel ? fuel.range : null,
       fuel: fuel ? fuel.percentRemaining * 100 : null,
       odometer: odometer ? odometer.distance : null,
+      pluggedIn,
+      chargeTimeMinutes,
     });
   } catch (error) {
     console.error("Error:", error);
