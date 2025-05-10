@@ -5,11 +5,10 @@ import { FontAwesome, MaterialIcons, Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import Colors from '../../Utils/Colors';
-import { auth, db } from '../../Utils/FirebaseConfig';
+import { auth, db, storage } from '../../Utils/FirebaseConfig';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
-import { storage } from '../../Utils/FirebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const SignUpScreen = () => {

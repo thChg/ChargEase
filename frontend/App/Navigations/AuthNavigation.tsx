@@ -1,6 +1,5 @@
 
 import LoginScreen from '../Screens/AuthScreen/LoginScreen';
-import SignUpScreen from '../Screens/AuthScreen/SignUpScreen';
 import { createStackNavigator } from '@react-navigation/stack';
 import OnboardingScreen from '../Screens/OnboardingScreen/OnboardingScreen';
 
@@ -11,7 +10,6 @@ export default function AuthNavigation() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
   );
 }

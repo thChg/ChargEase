@@ -7,7 +7,6 @@ import {
 } from "react-native";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import Colors from "../../Utils/Colors";
-import moment from "moment";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../Utils/Redux/Store";
 import SplashScreenComponent from "../SplashScreen/SplashScreen";
